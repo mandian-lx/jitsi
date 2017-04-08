@@ -155,6 +155,8 @@ BuildRequires:	pkgconfig(xtst)
 BuildRequires:	pkgconfig(x11)
 #    sysactivitynotifications
 BuildRequires:	pkgconfig(gtk+-x11-2.0)
+BuildRequires:	pkgconfig(x11)
+BuildRequires:	pkgconfig(xscrnsaver)
 
 Requires:	osgi(bcpkix)
 Requires:	osgi(bcprov)
@@ -254,6 +256,7 @@ Requires:	%{_lib}xtst6
 #    hwaddressretriever
 #    sysactivitynotifications
 Requires:	%{_lib}gdk-x11_2.0_0
+Requires:	%{_lib}x11_6
 Requires:	%{_lib}xscrnsaver1
 
 %description
