@@ -1,0 +1,164 @@
+--- jitsi/build.xml.system_jars
++++ jitsi/build.xml
+@@ -444,7 +444,7 @@
+     </target>
+ 
+     <!-- Jitsi Version -->
+-    <target name="version" depends="bundle-bundles,-pre-version">
++    <target name="version" depends="-pre-version">
+         <!-- Recompile ant task classes-->
+         <delete failonerror="false">
+             <fileset dir="${dest}" includes="net/java/sip/communicator/impl/version/*.class"/>
+@@ -465,7 +465,7 @@
+ 
+             <classpath>
+                 <pathelement path="${dest}"/>
+-                <pathelement location="${bundles.dest}/libjitsi.jar"/>
++                <pathelement location="/usr/lib/java/libjitsi/libjitsi.jar"/>
+             </classpath>
+         </taskdef>
+ 
+@@ -973,11 +973,11 @@
+         bundle-desktoputil,bundle-globaldisplaydetails, 
+         bundle-usersearch,
+         bundle-plugin-propertieseditor,bundle-plugin-accountinfo,
+-        bundle-plugin-connectioninfo,
+-        bundle-bundles"/>
++        bundle-plugin-connectioninfo" />
++        <!--"bundle-bundles"/-->
+ 
+     <!-- Copying of all unmodified libraries that are already bundles -->
+-    <target name="bundle-bundles">
++    <!--target name="bundle-bundles">
+         <copy file="${lib.noinst}/libjitsi-1.0-20170201.212655-235.jar" tofile="${bundles.dest}/libjitsi.jar"/>
+         <copy file="${lib.noinst}/fmj-1.0-SNAPSHOT.jar" tofile="${bundles.dest}/fmj.jar"/>
+         <copy file="${lib.noinst}/jitsi-lgpl-dependencies-1.0-SNAPSHOT.jar" tofile="${bundles.dest}/jitsi-lgpl-dependencies.jar"/>
+@@ -1007,7 +1007,7 @@
+         <copy file="${lib.noinst}/jna.jar" tofile="${bundles.dest}/jna.jar"/>
+         <copy file="${lib.noinst}/jna-platform.jar" tofile="${bundles.dest}/jna-platform.jar"/>
+         <copy file="${lib.noinst}/zrtp4j-light-4.1.0-jitsi-1-SNAPSHOT.jar" tofile="${bundles.dest}/zrtp4j.jar"/>
+-    </target>
++    </target-->
+ 
+     <!--BUNDLE-SC-LAUNCHER-->
+     <target name="bundle-sc-launcher">
+--- jitsi/lib/felix.client.run.properties.system_jars
++++ jitsi/lib/felix.client.run.properties
+@@ -37,27 +37,28 @@
+ 
+ #slf4j-jdk is an OSGi fragment, so install but don't start it
+ felix.auto.install.10= \
+- reference:file:sc-bundles/fmj.jar \
+- reference:file:sc-bundles/slf4j-jdk14.jar \
+- reference:file:sc-bundles/jitsi-lgpl-dependencies.jar \
+- reference:file:sc-bundles/jitsi-gpl-dependencies.jar
++ reference:file:../../../lib/java/fmj/fmj.jar \
++ reference:file:../../../share/java/slf4j/slf4j-jdk14.jar \
++ reference:file:../../../lib/java/jitsi-lgpl-dependencies.jar \
++ reference:file:../../../lib/java/jitsi-gpl-dependencies.jar
+ 
+ felix.auto.start.10= \
+- reference:file:lib/bundle/org.apache.felix.bundlerepository-1.6.4.jar \
+- reference:file:sc-bundles/bouncycastle.jar \
+- reference:file:sc-bundles/bccontrib.jar \
+- reference:file:sc-bundles/commons-lang.jar \
+- reference:file:sc-bundles/guava.jar \
+- reference:file:sc-bundles/slf4j-api.jar \
+- reference:file:sc-bundles/weupnp.jar \
+- reference:file:sc-bundles/dnssecjava.jar
++ reference:file:../../../share/java/felix/felix-bundlerepository.jar \
++ reference:file:../../../share/java/bcprov.jar \
++ reference:file:../../../share/java/bccontrib.jar \
++ reference:file:../../../share/java/commons-lang3.jar \
++ reference:file:../../../share/java/guava.jar \
++ reference:file:../../../share/java/slf4j/slf4j-api.jar \
++ reference:file:../../../share/java/weupnp.jar \
++ reference:file:../../../share/java/dnsjava.jar \
++ reference:file:../../../share/java/dnssecjava.jar
+  
+ felix.auto.start.11= \
+- reference:file:sc-bundles/sip-api.jar \
+- reference:file:sc-bundles/sdp-api.jar \
+- reference:file:sc-bundles/jain-sip-ri.jar \
+- reference:file:sc-bundles/java-sdp-nist-bridge.jar \
+- reference:file:sc-bundles/ice4j.jar
++ reference:file:../../../share/java/java-sip-api/sip-api-1.2.jar \
++ reference:file:../../../share/java/java-sdp-api/sdp-api.jar \
++ reference:file:../../../share/java/jain-sip-ri-ossonly.jar \
++ reference:file:../../../share/java/java-sdp-nist-bridge.jar \
++ reference:file:../../../share/java/ice4j.jar
+  
+  
+ # file:lib/bundle/shell.jar \
+@@ -65,25 +65,25 @@
+ # file:lib/bundle/tablelayout.jar
+ 
+ felix.auto.start.13= \
+- reference:file:sc-bundles/commons-codec.jar
++ reference:file:../../../share/java/commons-codec.jar
+ 
+ #warning: felix.auto.start.14 is injected by the windows build
+ #         for the clean-shutdown-bundle
+ 
+ felix.auto.start.15= \
+- reference:file:sc-bundles/zrtp4j.jar \
+- reference:file:sc-bundles/sdes4j.jar
++ reference:file:../../../share/java/zrtp4j-light.jar \
++ reference:file:../../../share/java/sdes4j.jar
+ 
+ felix.auto.start.16= \
+- reference:file:sc-bundles/bcpkix.jar \
+- reference:file:sc-bundles/libjitsi.jar \
++ reference:file:../../../share/java/bcpkix.jar \
++ reference:file:../../../lib/java/libjitsi/libjitsi.jar \
+  reference:file:sc-bundles/dnsservice.jar \
+- reference:file:sc-bundles/hsqldb.jar
++ reference:file:../../../share/java/hsqldb.jar
+ 
+ felix.auto.start.20= \
+  reference:file:sc-bundles/util.jar \
+- reference:file:lib/bundle/log4j.jar \
+- reference:file:lib/bundle/commons-logging.jar \
++ reference:file:../../../share/java/log4j-1.2.17.jar \
++ reference:file:../../../share/java/commons-logging.jar \
+  reference:file:sc-bundles/fileaccess.jar \
+  reference:file:sc-bundles/defaultresources.jar
+ 
+@@ -100,14 +100,15 @@
+  reference:file:sc-bundles/dnsconfig.jar
+ 
+ felix.auto.start.35= \
+- reference:file:sc-bundles/httpcore.jar \
+- reference:file:sc-bundles/httpclient.jar \
++ reference:file:../../../share/java/httpcomponents/httpcore.jar \
++ reference:file:../../../share/java/httpcomponents/httpclient.jar \
++ reference:file:../../../share/java/httpcomponents/httpmime.jar \
+  reference:file:sc-bundles/httputil.jar
+ 
+ felix.auto.start.40= \
+  reference:file:sc-bundles/jmdnslib.jar \
+- reference:file:sc-bundles/jna.jar \
+- reference:file:sc-bundles/jna-platform.jar \
++ reference:file:../../../share/java/jna.jar \
++ reference:file:../../../share/java/jna/jna-platform.jar \
+  reference:file:sc-bundles/provdisc.jar \
+  reference:file:sc-bundles/netaddr.jar \
+  reference:file:sc-bundles/sysactivitynotifications.jar \
+@@ -136,7 +137,7 @@
+  reference:file:sc-bundles/hid-service.jar \
+  reference:file:sc-bundles/hid.jar \
+  reference:file:sc-bundles/globalproxyconfig.jar \
+- reference:file:sc-bundles/irc-api-1.0.jar
++ reference:file:../../../share/java/irc-api.jar
+ 
+ #the contact list service depends on protocol.jar
+ #some protocol implementations however depend on the contact list
+@@ -183,7 +184,7 @@
+  reference:file:sc-bundles/osdependent.jar \
+  reference:file:sc-bundles/ldap.jar \
+  reference:file:sc-bundles/replacement.jar \
+- reference:file:sc-bundles/jmork.jar
++ reference:file:../../../share/java/jmork.jar
+ 
+ felix.auto.start.67= \
+  reference:file:sc-bundles/globalshortcut.jar \

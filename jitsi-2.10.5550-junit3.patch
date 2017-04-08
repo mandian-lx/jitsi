@@ -1,0 +1,17 @@
+--- jitsi/test/net/java/sip/communicator/slick/runner/ScTestRunner.java.junit3
++++ jitsi/test/net/java/sip/communicator/slick/runner/ScTestRunner.java
+@@ -60,12 +60,13 @@
+      * Always use the StandardTestSuiteLoader. Overridden from
+      * BaseTestRunner.
+      */
++/*
+     @Override
+     public TestSuiteLoader getLoader()
+     {
+         return new StandardTestSuiteLoader();
+     }
+-
++*/
+     @Override
+     public void testFailed(int status, Test test, Throwable t)
+     {

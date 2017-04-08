@@ -1,0 +1,34 @@
+--- jitsi/build.xml.spellcheck
++++ jitsi/build.xml
+@@ -2412,7 +2412,7 @@
+                 prefix="net/java/sip/communicator/plugin/spellcheck"/>
+             <zipfileset dir="${resources}/config/spellcheck"
+                 prefix="resources/config/spellcheck"/>
+-            <zipfileset src="${lib.noinst}/jmyspell-core.jar" prefix=""/>
++            <!--zipfileset src="${lib.noinst}/jmyspell-core.jar" prefix=""/-->
+         </jar>
+     </target>
+ 
+--- jitsi/lib/felix.client.run.properties.spellcheck
++++ jitsi/lib/felix.client.run.properties
+
+@@ -223,6 +225,7 @@
+  reference:file:sc-bundles/generalconfig.jar \
+  reference:file:../../../share/java/otr4j/org.otr4j.jar \
+  reference:file:sc-bundles/otr.jar \
++ reference:file:../../../share/java/jmyspell-core.jar \
+  reference:file:sc-bundles/spellChecker.jar \
+  reference:file:sc-bundles/advancedconfig.jar \
+  reference:file:sc-bundles/plugin-loggingutils.jar \
+--- jitsi/src/net/java/sip/communicator/plugin/spellcheck/spellCheck.manifest.mf.spellcheck
++++ jitsi/src/net/java/sip/communicator/plugin/spellcheck/spellCheck.manifest.mf
+@@ -15,6 +15,9 @@
+  net.java.sip.communicator.plugin.desktoputil,
+  net.java.sip.communicator.service.contactlist,
+  net.java.sip.communicator.service.protocol,
++ org.dts.spell.dictionary,
++ org.dts.spell.dictionary.myspell,
++ org.dts.spell.dictionary.myspell.wordmaps,
+  javax.swing,
+  javax.swing.event,
+  javax.swing.text,

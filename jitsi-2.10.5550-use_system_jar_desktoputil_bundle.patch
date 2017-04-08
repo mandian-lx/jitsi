@@ -1,0 +1,31 @@
+--- jitsi/build.xml.desktoputil
++++ jitsi/build.xml
+@@ -2631,7 +2631,7 @@
+                 prefix="net/java/sip/communicator/plugin/desktoputil">
+                 <exclude name="dns/**"/>
+             </zipfileset>
+-            <zipfileset src="${lib.noinst}/laf-widget.jar" prefix=""/>
++            <!--zipfileset src="${lib.noinst}/laf-widget.jar" prefix=""/-->
+         </jar>
+     </target>
+ 
+--- jitsi/lib/felix.client.run.properties.desktoputil
++++ jitsi/lib/felix.client.run.properties
+@@ -77,6 +76,7 @@
+  reference:file:sc-bundles/defaultresources.jar
+ 
+ felix.auto.start.30= \
++ reference:file:../../../share/java/laf-widget/laf-widget.jar \
+  reference:file:sc-bundles/desktoputil.jar \
+  reference:file:sc-bundles/configuration.jar \
+ 
+--- jitsi/src/net/java/sip/communicator/plugin/desktoputil/desktoputil.manifest.mf.desktoputil
++++ jitsi/src/net/java/sip/communicator/plugin/desktoputil/desktoputil.manifest.mf
+@@ -55,6 +55,7 @@
+  org.jitsi.util,
+  org.jitsi.util.event,
+  org.jitsi.util.swing,
++ org.jvnet.lafwidget.animation,
+  org.osgi.framework,
+  org.w3c.dom,
+  org.xbill.DNS,

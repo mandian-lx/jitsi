@@ -1,0 +1,34 @@
+--- jitsi/build.xml.smack
++++ jitsi/build.xml
+@@ -1445,13 +1445,13 @@
+ 
+     <target name="bundle-smacklib">
+         <!-- Creates a bundle containing the smack lib.-->
+-        <jar compress="false" destfile="${bundles.dest}/smacklib.jar"
++        <!--jar compress="false" destfile="${bundles.dest}/smacklib.jar"
+             manifest="${lib.noinst}/smack.manifest.mf">
+             <zipfileset src="${lib.noinst}/smackx-debug.jar" prefix=""/>
+             <zipfileset src="${lib.noinst}/smack.jar" prefix=""/>
+             <zipfileset src="${lib.noinst}/smackx.jar" prefix=""/>
+             <zipfileset src="${lib.noinst}/jnsapi.jar" prefix=""/>
+-        </jar>
++        </jar-->
+     </target>
+ 
+     <!-- BUNDLE-PHONENUMBER-SERVICE -->
+--- jitsi/lib/felix.client.run.properties.smack
++++ jitsi/lib/felix.client.run.properties
+@@ -168,7 +168,12 @@
+  reference:file:../../../share/java/joscar-client.jar \
+  reference:file:sc-bundles/protocol-icq.jar \
+  reference:file:sc-bundles/protocol-sip.jar \
+- reference:file:sc-bundles/smacklib.jar \
++ reference:file:../../../share/java/jzlib.jar \
++ reference:file:../../../share/java/xpp3-minimal.jar \
++ reference:file:../../../share/java/jitsi-smack/smack.jar \
++ reference:file:../../../share/java/jbosh.jar \
++ reference:file:../../../share/java/jnsapi-java/jnsapi.jar \
++ reference:file:../../../share/java/jitsi-smack/smackx.jar \
+  reference:file:sc-bundles/protocol-jabber.jar \
+  reference:file:sc-bundles/protocol-irc.jar \
+  reference:file:sc-bundles/reconnectplugin.jar

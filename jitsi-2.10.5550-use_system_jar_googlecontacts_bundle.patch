@@ -1,0 +1,65 @@
+--- jitsi/build.xml.googlecontacts
++++ jitsi/build.xml
+@@ -1302,15 +1302,15 @@
+                 prefix="net/java/sip/communicator/service/googlecontacts"/>
+             <zipfileset dir="${dest}/net/java/sip/communicator/impl/googlecontacts"
+                 prefix="net/java/sip/communicator/impl/googlecontacts" />
+-            <zipfileset src="${lib.noinst}/gdata-core-1.0.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/gdata-contacts-3.0.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/gdata-contacts-meta-3.0.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/gdata-client-1.0.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/gdata-client-meta-1.0.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/google-oauth-client-1.20.0.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/google-http-client-1.20.0.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/google-http-client-jackson2-1.20.0.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/jackson-core-2.5.3.jar" prefix=""/>
++            <!--zipfileset src="${lib.noinst}/gdata-core-1.0.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/gdata-contacts-3.0.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/gdata-contacts-meta-3.0.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/gdata-client-1.0.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/gdata-client-meta-1.0.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/google-oauth-client-1.20.0.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/google-http-client-1.20.0.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/google-http-client-jackson2-1.20.0.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/jackson-core-2.5.3.jar" prefix=""/-->
+         </jar>
+     </target>
+ 
+--- jitsi/lib/felix.client.run.properties.googlecontacts
++++ jitsi/lib/felix.client.run.properties
+@@ -114,6 +113,15 @@
+  reference:file:sc-bundles/branding.jar \
+  reference:file:sc-bundles/provdisc-dhcp.jar \
+  reference:file:sc-bundles/provdisc-mdns.jar \
++ reference:file:../../../share/java/gdata/gdata-core.jar \
++ reference:file:../../../share/java/gdata/gdata-client-meta.jar \
++ reference:file:../../../share/java/gdata/gdata-client.jar \
++ reference:file:../../../share/java/gdata/gdata-contacts-meta.jar \
++ reference:file:../../../share/java/gdata/gdata-contacts.jar \
++ reference:file:../../../share/java/google-oauth-java-client/google-oauth-client.jar \
++ reference:file:../../../share/java/google-http-java-client/google-http-client.jar \
++ reference:file:../../../share/java/google-http-java-client/google-http-client-jackson2.jar \
++ reference:file:../../../share/java/jackson-core.jar \
+  reference:file:sc-bundles/googlecontacts-service.jar \
+  reference:file:sc-bundles/googlecontacts.jar \
+  reference:file:sc-bundles/certificate.jar
+--- jitsi/src/net/java/sip/communicator/impl/googlecontacts/googlecontacts.manifest.mf.googlecontacts
++++ jitsi/src/net/java/sip/communicator/impl/googlecontacts/googlecontacts.manifest.mf
+@@ -6,6 +6,17 @@
+ Bundle-SymbolicName: net.java.sip.communicator.googlecontacts
+ Import-Package: org.osgi.framework,
+  com.google.common.collect,
++ com.google.api.client.auth.oauth2,
++ com.google.api.client.http,
++ com.google.api.client.http.javanet,
++ com.google.api.client.json,
++ com.google.api.client.json.jackson2,
++ com.google.gdata.client.contacts,
++ com.google.gdata.client,
++ com.google.gdata.data,
++ com.google.gdata.data.contacts,
++ com.google.gdata.data.extensions,
++ com.google.gdata.util,
+  org.jitsi.service.configuration,
+  net.java.sip.communicator.service.credentialsstorage,
+  net.java.sip.communicator.service.contactsource,

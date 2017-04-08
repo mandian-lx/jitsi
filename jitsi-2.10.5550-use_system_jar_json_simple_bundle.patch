@@ -1,0 +1,30 @@
+--- jitsi/build.xml.json
++++ jitsi/build.xml
+@@ -2149,14 +2149,14 @@
+ 
+     <!--BUNDLE-JSON -->
+     <target name="bundle-json">
+-        <jar compress="true" destfile="${bundles.dest}/json.jar"
++        <!--jar compress="true" destfile="${bundles.dest}/json.jar"
+             filesetmanifest="merge">
+ 
+             <zipfileset src="${lib.noinst}/json-simple-1.1.1.jar" prefix=""/>
+             <manifest>
+                 <attribute name="System-Bundle" value="yes"/>
+             </manifest>
+-        </jar>
++        </jar-->
+     </target>
+ 
+     <!--BUNDLE-FILEHISTORY-->
+--- jitsi/lib/felix.client.run.properties.json
++++ jitsi/lib/felix.client.run.properties
+@@ -157,7 +157,7 @@
+ felix.auto.start.50= \
+  reference:file:sc-bundles/contactlist.jar \
+  reference:file:sc-bundles/phonenumbers.jar \
+- reference:file:sc-bundles/json.jar
++ reference:file:../../../share/java/json-simple.jar
+ 
+ felix.auto.start.52= \
+  reference:file:sc-bundles/neomedia.jar \

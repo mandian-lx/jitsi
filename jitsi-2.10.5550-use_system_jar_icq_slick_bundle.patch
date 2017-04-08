@@ -1,0 +1,42 @@
+--- jitsi/build.xml.icq_slick
++++ jitsi/build.xml
+@@ -1496,10 +1496,10 @@
+                 prefix="net/java/sip/communicator/slick/protocol/icq"/>
+             <zipfileset dir="${dest}/net/java/sip/communicator/slick/protocol/generic"
+                 prefix="net/java/sip/communicator/slick/protocol/generic"/>
+-            <zipfileset src="${lib.noinst}/joscar-client.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/joscar-common.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/joscar-protocol.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/jsocks-klea.jar" prefix=""/>
++            <!--zipfileset src="${lib.noinst}/joscar-client.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/joscar-common.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/joscar-protocol.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/jsocks-klea.jar" prefix=""/-->
+         </jar>
+     </target>
+ 
+--- jitsi/test/net/java/sip/communicator/slick/protocol/icq/icq.provider.slick.manifest.mf.icq_slick
++++ jitsi/test/net/java/sip/communicator/slick/protocol/icq/icq.provider.slick.manifest.mf
+@@ -8,6 +8,22 @@
+  javax.net,
+  org.jitsi.service.configuration,
+  org.osgi.framework,
++ net.kano.joscar,
++ net.kano.joscar.flapcmd,
++ net.kano.joscar.snac,
++ net.kano.joscar.snaccmd,
++ net.kano.joscar.snaccmd.conn,
++ net.kano.joscar.snaccmd.error,
++ net.kano.joscar.snaccmd.icbm,
++ net.kano.joscar.snaccmd.loc,
++ net.kano.joscar.snaccmd.ssi,
++ net.kano.joscar.tlv,
++ net.kano.joustsim,
++ net.kano.joustsim.oscar,
++ net.kano.joustsim.oscar.oscar.service.bos,
++ net.kano.joustsim.oscar.oscar.service.buddy,
++ net.kano.joustsim.oscar.oscar.service.icbm,
++ net.kano.joustsim.oscar.oscar.service.ssi,
+  net.java.sip.communicator.util,
+  net.java.sip.communicator.service.dns,
+  net.java.sip.communicator.service.protocol,

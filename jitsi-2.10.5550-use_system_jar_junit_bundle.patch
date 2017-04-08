@@ -1,0 +1,17 @@
+--- jitsi/build.xml.junit
++++ jitsi/build.xml
+@@ -1210,12 +1210,12 @@
+     </target>
+ 
+     <!--BUNDLE-JUNIT -->
+-    <target name="bundle-junit">
++    <!--target name="bundle-junit">
+         <jar compress="true" destfile="lib/bundle/junit.jar"
+             manifest="${testsrc}/junit/junit.manifest.mf">
+             <zipfileset src="${lib.noinst}/junit.jar" prefix=""/>
+         </jar>
+-    </target>
++    </target-->
+ 
+     <!--BUNDLE-NEOMEDIA-->
+     <target name="bundle-neomedia">

@@ -1,0 +1,20 @@
+--- jitsi/lib/felix.client.run.properties.galagonotification
++++ jitsi/lib/felix.client.run.properties
+@@ -177,6 +182,7 @@
+  reference:file:sc-bundles/update.jar \
+  reference:file:sc-bundles/accountinfo.jar \
+  reference:file:sc-bundles/connectioninfo.jar \
++ reference:file:sc-bundles/galagonotification.jar \
+  reference:file:sc-bundles/swingnotification.jar \
+  reference:file:sc-bundles/systray-service.jar \
+  reference:file:sc-bundles/osdependent.jar \
+--- jitsi/src/native/build.xml.galagonotification
++++ jitsi/src/native/build.xml
+@@ -267,6 +267,7 @@
+       <compilerarg value="-O2" />
+       <compilerarg value="-I/usr/include/dbus-1.0" />
+       <compilerarg value="-I/usr/lib/dbus-1.0/include" />
++      <compilerarg value="-I/usr/lib64/dbus-1.0/include" />
+       <compilerarg value="-I/usr/lib/x86_64-linux-gnu/dbus-1.0/include" />
+       <compilerarg value="-I/usr/lib/i386-linux-gnu/dbus-1.0/include" />
+       <compilerarg value="-m32" if="cross_32" />

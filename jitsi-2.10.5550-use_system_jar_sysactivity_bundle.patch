@@ -1,0 +1,45 @@
+--- jitsi/m2/jitsi-sysactivity/pom.xml.sysactivity
++++ jitsi/m2/jitsi-sysactivity/pom.xml
+@@ -63,6 +63,7 @@
+         <configuration>
+           <instructions>
+             <Import-Package>org.osgi.framework,
++              org.freedesktop,org.freedesktop.dbus,org.freedesktop.dbus.exceptions,
+               org.jitsi.service.version,
+               org.jitsi.service.configuration,
+               org.jitsi.util,
+--- jitsi/src/native/build.xml.sysactivity
++++ jitsi/src/native/build.xml
+@@ -398,6 +398,8 @@
+         <compilerarg value="-I/usr/include/gdk-pixbuf-2.0/" if="is.running.linux" />
+         <compilerarg value="-I/usr/lib/glib-2.0/include/" if="is.running.linux" />
+         <compilerarg value="-I/usr/lib/gtk-2.0/include/" if="is.running.linux" />
++        <compilerarg value="-I/usr/lib64/glib-2.0/include/" if="is.running.linux" />
++        <compilerarg value="-I/usr/lib64/gtk-2.0/include/" if="is.running.linux" />
+         <compilerarg value="-I/usr/lib/x86_64-linux-gnu/glib-2.0/include" if="is.running.linux" />
+         <compilerarg value="-I/usr/lib/x86_64-linux-gnu/gtk-2.0/include" if="is.running.linux" />
+         <compilerarg value="-I/usr/lib/i386-linux-gnu/glib-2.0/include" if="is.running.linux" />
+--- jitsi/lib/felix.client.run.properties.sysactivity
++++ jitsi/lib/felix.client.run.properties
+@@ -77,6 +76,9 @@
+  reference:file:../../../share/java/jna/jna-platform.jar \
+  reference:file:sc-bundles/provdisc.jar \
+  reference:file:sc-bundles/netaddr.jar \
++ reference:file:../../../share/java/dbus-java/dbus.jar \
++ reference:file:../../../lib/java/unix-0.5.jar \
++ reference:file:../../../lib/java/hexdump-0.2.jar \
+  reference:file:sc-bundles/sysactivitynotifications.jar \
+  reference:file:sc-bundles/browserlauncher.jar \
+  reference:file:sc-bundles/updateservice.jar
+--- jitsi/src/net/java/sip/communicator/impl/sysactivity/sysactivity.impl.manifest.mf.sysactivity
++++ jitsi/src/net/java/sip/communicator/impl/sysactivity/sysactivity.impl.manifest.mf
+@@ -5,6 +5,9 @@
+ Bundle-Version: 0.0.1
+ Bundle-SymbolicName: net.java.sip.communicator.sysactivity
+ Import-Package: org.osgi.framework,
++ org.freedesktop,
++ org.freedesktop.dbus,
++ org.freedesktop.dbus.exceptions,
+  org.jitsi.service.version,
+  org.jitsi.service.configuration,
+  org.jitsi.util,

@@ -1,0 +1,31 @@
+--- jitsi/build.xml.chatalerter
++++ jitsi/build.xml
+@@ -1968,7 +1968,7 @@
+             manifest="${src}/net/java/sip/communicator/plugin/chatalerter/chatalerter.manifest.mf">
+             <zipfileset dir="${dest}/net/java/sip/communicator/plugin/chatalerter"
+                 prefix="net/java/sip/communicator/plugin/chatalerter"/>
+-            <zipfileset src="${lib.noinst}/jdic_misc.jar" prefix=""/>
++            <!--zipfileset src="${lib.noinst}/jdic_misc.jar" prefix=""/-->
+         </jar>
+     </target>
+ 
+--- jitsi/lib/felix.client.run.properties.chatalerter
++++ jitsi/lib/felix.client.run.properties
+@@ -223,6 +224,7 @@
+  reference:file:sc-bundles/notification-handlers.jar \
+  reference:file:sc-bundles/notification-wiring.jar \
+  reference:file:sc-bundles/contactinfo.jar \
++ reference:file:../../../lib/java/jdic-misc.jar \
+  reference:file:sc-bundles/chatalerter.jar \
+  reference:file:sc-bundles/keybindingChooser.jar \
+  reference:file:sc-bundles/generalconfig.jar \
+--- jitsi/src/net/java/sip/communicator/plugin/chatalerter/chatalerter.manifest.mf.chatalerter
++++ jitsi/src/net/java/sip/communicator/plugin/chatalerter/chatalerter.manifest.mf
+@@ -5,6 +5,7 @@
+ Bundle-Version: 0.0.1
+ Bundle-SymbolicName: net.java.sip.communicator.plugin.chatalerter
+ Import-Package: org.osgi.framework,
++ org.jdesktop.jdic.misc,
+  org.jitsi.util,
+  org.jitsi.service.configuration,
+  net.java.sip.communicator.util,

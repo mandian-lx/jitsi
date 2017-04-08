@@ -1,0 +1,31 @@
+--- jitsi/build.xml.dhcp
++++ jitsi/build.xml
+@@ -2432,7 +2432,7 @@
+             manifest="${src}/net/java/sip/communicator/impl/provdisc/dhcp/dhcp.provdisc.manifest.mf">
+             <zipfileset dir="${dest}/net/java/sip/communicator/impl/provdisc/dhcp"
+                 prefix="net/java/sip/communicator/impl/provdisc/dhcp" />
+-            <zipfileset src="${lib.noinst}/dhcp4java-1.00.jar"/>
++            <!--zipfileset src="${lib.noinst}/dhcp4java-1.00.jar"/-->
+         </jar>
+     </target>
+ 
+--- jitsi/lib/felix.client.run.properties.dhcp
++++ jitsi/lib/felix.client.run.properties
+@@ -114,6 +113,7 @@
+  reference:file:sc-bundles/ui-service.jar \
+  reference:file:sc-bundles/argdelegation-service.jar \
+  reference:file:sc-bundles/version-impl.jar \
++ reference:file:../../../share/java/dhcp4java.jar \
+  reference:file:sc-bundles/branding.jar \
+  reference:file:sc-bundles/provdisc-dhcp.jar \
+  reference:file:sc-bundles/provdisc-mdns.jar \
+--- jitsi/src/net/java/sip/communicator/impl/provdisc/dhcp/dhcp.provdisc.manifest.mf.dhcp
++++ jitsi/src/net/java/sip/communicator/impl/provdisc/dhcp/dhcp.provdisc.manifest.mf
+@@ -5,6 +5,7 @@
+ Bundle-Version: 0.0.1
+ Bundle-SymbolicName: net.java.sip.communicator.provdisc.dhcp
+ Import-Package: org.osgi.framework,
++ org.dhcp4java,
+  net.java.sip.communicator.service.provdisc,
+  net.java.sip.communicator.service.provdisc.event,
+  net.java.sip.communicator.service.netaddr,

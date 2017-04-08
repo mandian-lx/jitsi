@@ -1,0 +1,34 @@
+--- jitsi/build.xml.otr
++++ jitsi/build.xml
+@@ -2187,7 +2187,7 @@
+         <jar compress="false" destfile="${bundles.dest}/otr.jar" manifest="${src}/net/java/sip/communicator/plugin/otr/otr.manifest.mf">
+             <zipfileset dir="${dest}/net/java/sip/communicator/plugin/otr"
+                 prefix="net/java/sip/communicator/plugin/otr"/>
+-            <zipfileset src="${lib.noinst}/otr4j.jar"/>
++            <!--zipfileset src="${lib.noinst}/otr4j.jar"/-->
+         </jar>
+     </target>
+ 
+--- jitsi/lib/felix.client.run.properties.otr
++++ jitsi/lib/felix.client.run.properties
+@@ -223,6 +225,7 @@
+  reference:file:sc-bundles/chatalerter.jar \
+  reference:file:sc-bundles/keybindingChooser.jar \
+  reference:file:sc-bundles/generalconfig.jar \
++ reference:file:../../../share/java/otr4j/org.otr4j.jar \
+  reference:file:sc-bundles/otr.jar \
+  reference:file:sc-bundles/spellChecker.jar \
+  reference:file:sc-bundles/advancedconfig.jar \
+--- jitsi/src/net/java/sip/communicator/plugin/otr/otr.manifest.mf.otr
++++ jitsi/src/net/java/sip/communicator/plugin/otr/otr.manifest.mf
+@@ -25,6 +25,10 @@
+  javax.crypto,
+  javax.crypto.interfaces,
+  javax.crypto.spec,
++ net.java.otr4j,
++ net.java.otr4j.crypto,
++ net.java.otr4j.io,
++ net.java.otr4j.session,
+  org.bouncycastle.crypto,
+  org.bouncycastle.crypto.generators,
+  org.bouncycastle.crypto.params,

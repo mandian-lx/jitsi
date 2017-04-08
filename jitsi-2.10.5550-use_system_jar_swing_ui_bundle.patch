@@ -1,0 +1,35 @@
+--- jitsi/build.xml.swing
++++ jitsi/build.xml
+@@ -1577,8 +1577,8 @@
+             manifest="${src}/net/java/sip/communicator/impl/gui/swing.ui.manifest.mf">
+             <zipfileset dir="${dest}/net/java/sip/communicator/impl/gui"
+                 prefix="net/java/sip/communicator/impl/gui"/>
+-            <zipfileset src="${lib.noinst}/mac_widgets-0.9.5.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/forms-1.2.1.jar" prefix=""/>
++            <!--zipfileset src="${lib.noinst}/mac_widgets-0.9.5.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/forms-1.2.1.jar" prefix=""/-->
+         </jar>
+     </target>
+ 
+--- jitsi/lib/felix.client.run.properties.swing
++++ jitsi/lib/felix.client.run.properties
+@@ -183,6 +195,9 @@
+  reference:file:sc-bundles/muc.jar
+ 
+ felix.auto.start.66= \
++ reference:file:../../../share/java/macwidgets.jar \
++ reference:file:../../../share/java/jgoodies-common.jar \
++ reference:file:../../../share/java/jgoodies-forms.jar \
+  reference:file:sc-bundles/swing-ui.jar \
+  reference:file:sc-bundles/update.jar \
+  reference:file:sc-bundles/accountinfo.jar \
+--- jitsi/src/net/java/sip/communicator/impl/gui/swing.ui.manifest.mf.swing
++++ jitsi/src/net/java/sip/communicator/impl/gui/swing.ui.manifest.mf
+@@ -5,6 +5,7 @@
+ Bundle-Version: 0.0.1
+ Bundle-SymbolicName: net.java.sip.communicator.swingui
+ Import-Package: com.apple.eawt,
++ com.explodingpixels.macwidgets,
+  com.sun.jna.platform,
+  javax.accessibility,
+  javax.imageio,

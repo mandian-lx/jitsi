@@ -1,0 +1,59 @@
+--- jitsi/lib/jitsi-defaults.properties.myspell
++++ jitsi/lib/jitsi-defaults.properties
+@@ -34,7 +34,7 @@
+ net.java.sip.communicator.service.protocol.jabber.GOOGLE_CONTACTS_ENABLED=true
+ 
+ #Spellchecker config
+-net.java.sip.communicator.plugin.spellcheck.SYSTEM_HUNSPELL_DIR=/usr/share/hunspell
++net.java.sip.communicator.plugin.spellcheck.SYSTEM_HUNSPELL_DIR=/usr/share/dict/ooo
+ 
+ # protocol order for the simple initial account registration wizard
+ plugin.simpleaccreg.PROTOCOL_ORDER=SIP|Jabber|Google Talk
+--- jitsi/src/net/java/sip/communicator/plugin/spellcheck/SpellChecker.java.myspell
++++ jitsi/src/net/java/sip/communicator/plugin/spellcheck/SpellChecker.java
+@@ -416,11 +416,13 @@
+                 }
+ 
+                 // downloads dictionary if unavailable (not cached)
+-                if (!dictFound)
+-                {
+-                    copyDictionary(locale.getDictUrl().openStream(),
+-                        dictLocation);
+-                }
++//                if (!dictFound)
++//                {
++//                    copyDictionary(locale.getDictUrl().openStream(),
++//                        dictLocation);
++//                }
++
++
+             }
+ 
+             if (dictInput == null)
+--- jitsi/src/net/java/sip/communicator/plugin/spellcheck/LanguageMenuBar.java.myspell
++++ jitsi/src/net/java/sip/communicator/plugin/spellcheck/LanguageMenuBar.java
+@@ -603,9 +603,10 @@
+                         "plugin.spellcheck.DICT_ERROR");
+                 if (exc instanceof IOException)
+                 {
+-                    message = Resources.getString(
+-                        "plugin.spellcheck.DICT_RETRIEVE_ERROR")
+-                            + ":\n" + locale.getDictUrl();
++                    message = "An installed dictionary for " + locale.getLabel() +
++                              " cannot be found. \n\nPlease install the package " +
++                              " 'myspell-" + locale.getIcuLocale() + "'\n" +
++                              "from the package manager before to enable it.";
+                 }
+                 else if (exc instanceof IllegalArgumentException)
+                 {
+--- jitsi/src/net/java/sip/communicator/plugin/spellcheck/Parameters.java.dict
++++ jitsi/src/net/java/sip/communicator/plugin/spellcheck/Parameters.java
+@@ -132,7 +132,7 @@
+             try
+             {
+                 Default field = Default.fromString(attribute);
+-                DEFAULTS.put(field, value);
++                DEFAULTS.put(field, System.getProperty("user.language") + "," + System.getProperty("user.country").toLowerCase());
+             }
+             catch (IllegalArgumentException exc)
+             {

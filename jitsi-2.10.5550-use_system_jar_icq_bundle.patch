@@ -1,0 +1,69 @@
+--- jitsi/build.xml.icq
++++ jitsi/build.xml
+@@ -1480,10 +1480,10 @@
+             manifest="${src}/net/java/sip/communicator/impl/protocol/icq/icq.provider.manifest.mf">
+             <zipfileset dir="${dest}/net/java/sip/communicator/impl/protocol/icq"
+                 prefix="net/java/sip/communicator/impl/protocol/icq"/>
+-            <zipfileset src="${lib.noinst}/joscar-client.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/joscar-common.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/joscar-protocol.jar" prefix=""/>
+-            <zipfileset src="${lib.noinst}/jsocks-klea.jar" prefix=""/>
++            <!--zipfileset src="${lib.noinst}/joscar-client.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/joscar-common.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/joscar-protocol.jar" prefix=""/-->
++            <!--zipfileset src="${lib.noinst}/jsocks-klea.jar" prefix=""/-->
+         </jar>
+     </target>
+ 
+--- jitsi/lib/felix.client.run.properties.icq
++++ jitsi/lib/felix.client.run.properties
+@@ -161,6 +161,10 @@
+ 
+ felix.auto.start.52= \
+  reference:file:sc-bundles/neomedia.jar \
++ reference:file:../../../share/java/jsocks.jar \
++ reference:file:../../../share/java/joscar-common.jar \
++ reference:file:../../../share/java/joscar-protocol.jar \
++ reference:file:../../../share/java/joscar-client.jar \
+  reference:file:sc-bundles/protocol-icq.jar \
+  reference:file:sc-bundles/protocol-sip.jar \
+  reference:file:sc-bundles/smacklib.jar \
+--- jitsi/src/net/java/sip/communicator/impl/protocol/icq/icq.provider.manifest.mf.icq
++++ jitsi/src/net/java/sip/communicator/impl/protocol/icq/icq.provider.manifest.mf
+@@ -7,6 +7,36 @@
+ Import-Package: org.osgi.framework,
+  javax.net,
+  sun.misc,
++ net.kano.joscar,
++ net.kano.joscar.flap,
++ net.kano.joscar.flapcmd,
++ net.kano.joscar.net,
++ net.kano.joscar.rvcmd,
++ net.kano.joscar.snac,
++ net.kano.joscar.snaccmd,
++ net.kano.joscar.snaccmd.auth,
++ net.kano.joscar.snaccmd.conn,
++ net.kano.joscar.snaccmd.error,
++ net.kano.joscar.snaccmd.icq,
++ net.kano.joscar.snaccmd.loc,
++ net.kano.joscar.snaccmd.ssi,
++ net.kano.joustsim,
++ net.kano.joustsim.oscar,
++ net.kano.joustsim.oscar.oscar.loginstatus,
++ net.kano.joustsim.oscar.oscar.service,
++ net.kano.joustsim.oscar.oscar.service.bos,
++ net.kano.joustsim.oscar.oscar.service.buddy,
++ net.kano.joustsim.oscar.oscar.service.chatrooms,
++ net.kano.joustsim.oscar.oscar.service.icbm,
++ net.kano.joustsim.oscar.oscar.service.icbm.ft,
++ net.kano.joustsim.oscar.oscar.service.icbm.ft.controllers,
++ net.kano.joustsim.oscar.oscar.service.icbm.ft.events,
++ net.kano.joustsim.oscar.oscar.service.icbm.ft.state,
++ net.kano.joustsim.oscar.oscar.service.icon,
++ net.kano.joustsim.oscar.oscar.service.info,
++ net.kano.joustsim.oscar.oscar.service.ssi,
++ net.kano.joustsim.oscar.proxy,
++ net.kano.joustsim.trust,
+  org.jitsi.service.configuration,
+  org.jitsi.service.resources, net.java.sip.communicator.service.resources,
+  net.java.sip.communicator.util,

@@ -1,0 +1,15 @@
+--- jitsi/src/net/java/sip/communicator/impl/protocol/jabber/jabber.provider.manifest.mf.jingle
++++ jitsi/src/net/java/sip/communicator/impl/protocol/jabber/jabber.provider.manifest.mf
+@@ -59,12 +59,6 @@
+  org.jivesoftware.smackx.bytestreams.ibb.provider,
+  org.jivesoftware.smackx.bytestreams.socks5.provider,
+  org.jivesoftware.smackx.filetransfer,
+- org.jivesoftware.smackx.jingle,
+- org.jivesoftware.smackx.jingle.listeners,
+- org.jivesoftware.smackx.jingle.media,
+- org.jivesoftware.smackx.jingle.nat,
+- org.jivesoftware.smackx.jingle.packet,
+- org.jivesoftware.smackx.jingle.provider,
+  org.jivesoftware.smackx.muc,
+  org.jivesoftware.smackx.packet,
+  org.jivesoftware.smackx.provider,
