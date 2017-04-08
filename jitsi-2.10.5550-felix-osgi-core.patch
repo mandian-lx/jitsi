@@ -1,0 +1,1689 @@
+# partially revert commit of 15f40128402690804efd9e948234f12a4e7d5050 
+# see:
+# https://github.com/jitsi/jitsi/commit/15f40128402690804efd9e948234f12a4e7d5050#diff-99bc4795e23eaaaf58913108a45b1a25
+# https://github.com/jitsi/jitsi/commit/a613195ef42ca5a88e663b17d6419ab4a6db1891
+# https://github.com/jitsi/jitsi/commit/a613195ef42ca5a88e663b17d6419ab4a6db1891
+# https://github.com/jitsi/jitsi/commit/b211c26d6c8f51a75d3b64b6092284c3847a3a8a#UtilActivator.java
+# https://github.com/jitsi/jitsi/commit/ed9aef18b5eaece328169066c367b2a11a502adc
+# https://github.com/jitsi/jitsi/commit/15f40128402690804efd9e948234f12a4e7d5050#diff-c2cf730a6454e97e92499ad6bc0e8a66
+--- jitsi/src/net/java/sip/communicator/util/ServiceUtils.java.felix
++++ jitsi/src/net/java/sip/communicator/util/ServiceUtils.java
+@@ -20,6 +20,7 @@
+ import java.util.*;
+ 
+ import org.osgi.framework.*;
++import org.osgi.service.packageadmin.PackageAdmin;
+ 
+ /**
+  * Gathers utility functions related to OSGi services such as getting a service
+@@ -45,15 +46,15 @@
+      */
+     public static <T> T getService(
+             BundleContext bundleContext,
+-            Class<T> serviceClass)
++            Class<T> serviceClass)
+     {
+-        ServiceReference<T> serviceReference
+-            = bundleContext.getServiceReference(serviceClass);
++        ServiceReference serviceReference
++            = bundleContext.getServiceReference(serviceClass.getName());
+ 
+         return
+             (serviceReference == null)
+                 ? null
+-                : bundleContext.getService(serviceReference);
++                : (T) bundleContext.getService(serviceReference);
+     }
+ 
+     /**
+@@ -66,28 +67,25 @@
+      * get
+      * @return the OSGi service references registered in <tt>bundleContext</tt>
+      * with the specified <tt>serviceClass</tt> if such a services exists there;
+-     * otherwise, an empty <tt>Collection</tt>
++     * otherwise, <tt>null</tt>
+      */
+-    public static <T> Collection<ServiceReference<T>> getServiceReferences(
++    public static ServiceReference[] getServiceReferences(
+             BundleContext bundleContext,
+-            Class<T> serviceClass)
++            Class<?> serviceClass)
+     {
+-        Collection<ServiceReference<T>> serviceReferences;
++        ServiceReference[] handlerRefs = null;
+ 
+         try
+         {
+-            serviceReferences
+-                = bundleContext.getServiceReferences(
+-                        serviceClass,
+-                        null);
++            handlerRefs = bundleContext.getServiceReferences(
++                    serviceClass.getName(),
++                    null);
+         }
+         catch (InvalidSyntaxException ex)
+         {
+-            serviceReferences = null;
++            throw new RuntimeException(ex);
+         }
+-        if (serviceReferences == null)
+-            serviceReferences = Collections.emptyList();
+-        return serviceReferences;
++        return handlerRefs;
+     }
+ 
+     /** Prevents the creation of <tt>ServiceUtils</tt> instances. */
+--- jitsi/src/net/java/sip/communicator/service/protocol/AccountManager.java.felix
++++ jitsi/src/net/java/sip/communicator/service/protocol/AccountManager.java
+@@ -303,22 +303,34 @@
+                                     boolean includeHidden,
+                                     String userID)
+     {
+-        Collection<ServiceReference<ProtocolProviderFactory>> factoryRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bundleContext,
+-                    ProtocolProviderFactory.class);
++        ServiceReference[] factoryRefs = null;
+         boolean hasStoredAccounts = false;
+ 
+-        if (!factoryRefs.isEmpty())
++        try
++        {
++            factoryRefs
++                = bundleContext.getServiceReferences(
++                        ProtocolProviderFactory.class.getName(),
++                        null);
++        }
++        catch (InvalidSyntaxException ex)
++        {
++            factoryRefs = null;
++            logger.error(
++                "Failed to retrieve the registered ProtocolProviderFactories",
++                ex);
++        }
++
++        if ((factoryRefs != null) && (factoryRefs.length > 0))
+         {
+             ConfigurationService configService
+                 = ProtocolProviderActivator.getConfigurationService();
+ 
+-            for (ServiceReference<ProtocolProviderFactory> factoryRef
++            for (ServiceReference factoryRef
+                     : factoryRefs)
+             {
+                 ProtocolProviderFactory factory
+-                    = bundleContext.getService(factoryRef);
++                    = (ProtocolProviderFactory) bundleContext.getService(factoryRef);
+ 
+                 if ((protocolName != null)
+                         && !protocolName.equals(factory.getProtocolName()))
+@@ -404,21 +416,33 @@
+      */
+     public AccountID findAccountID(String uid)
+     {
+-        Collection<ServiceReference<ProtocolProviderFactory>> factoryRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bundleContext,
+-                    ProtocolProviderFactory.class);
++        ServiceReference[] factoryRefs = null;
++
++        try
++        {
++            factoryRefs
++                = bundleContext.getServiceReferences(
++                        ProtocolProviderFactory.class.getName(),
++                        null);
++        }
++        catch (InvalidSyntaxException ex)
++        {
++            factoryRefs = null;
++            logger.error(
++                "Failed to retrieve the registered ProtocolProviderFactories",
++                ex);
++        }
+ 
+-        if (!factoryRefs.isEmpty())
++        if ((factoryRefs != null) && (factoryRefs.length > 0))
+         {
+             ConfigurationService configService
+                 = ProtocolProviderActivator.getConfigurationService();
+ 
+-            for (ServiceReference<ProtocolProviderFactory> factoryRef
++            for (ServiceReference factoryRef
+                     : factoryRefs)
+             {
+                 ProtocolProviderFactory factory
+-                    = bundleContext.getService(factoryRef);
++                    = (ProtocolProviderFactory) bundleContext.getService(factoryRef);
+ 
+                 String factoryPackage = getFactoryImplPackageName(factory);
+                 List<String> storedAccountsProps
+@@ -1019,7 +1043,7 @@
+                 accountID.getProtocolName());
+ 
+         // Obtain the protocol provider.
+-        ServiceReference<ProtocolProviderService> serRef
++        ServiceReference serRef
+             = providerFactory.getProviderForAccount(accountID);
+ 
+         // If there's no such provider we have nothing to do here.
+@@ -1027,7 +1051,7 @@
+             return;
+ 
+         ProtocolProviderService protocolProvider
+-            = bundleContext.getService(serRef);
++            = (ProtocolProviderService) bundleContext.getService(serRef);
+ 
+         // Set the account icon path for unloaded accounts.
+         String iconPathProperty = accountID.getAccountPropertyString(
+--- jitsi/src/net/java/sip/communicator/service/protocol/AccountManagerUtils.java.felix
++++ jitsi/src/net/java/sip/communicator/service/protocol/AccountManagerUtils.java
+@@ -33,8 +33,8 @@
+     private static AccountManager getAccountManager(BundleContext bundleContext)
+     {
+         return
+-            bundleContext.getService(
+-                    bundleContext.getServiceReference(AccountManager.class));
++            (AccountManager) bundleContext.getService(
++                    bundleContext.getServiceReference(AccountManager.class.getName()));
+     }
+ 
+     /**
+@@ -103,13 +103,13 @@
+                     if (bundleContext == null)
+                         return;
+ 
+-                    Collection<ServiceReference<ProtocolProviderFactory>> factoryRefs;
++                    ServiceReference[] factoryRefs;
+ 
+                     try
+                     {
+                         factoryRefs
+                             = bundleContext.getServiceReferences(
+-                                    ProtocolProviderFactory.class,
++                                    ProtocolProviderFactory.class.getName(),
+                                     "("
+                                         + ProtocolProviderFactory.PROTOCOL
+                                         + "="
+@@ -124,12 +124,11 @@
+                          */
+                         factoryRefs = null;
+                     }
+-                    if ((factoryRefs != null) && !factoryRefs.isEmpty())
++                    if ((factoryRefs != null) && (factoryRefs.length > 0))
+                     {
+                         boolean factoryIsRegistered = false;
+ 
+-                        for (ServiceReference<ProtocolProviderFactory> factoryRef
+-                                : factoryRefs)
++                        for (ServiceReference factoryRef : factoryRefs)
+                         {
+                             if (factory == bundleContext.getService(factoryRef))
+                             {
+--- jitsi/src/net/java/sip/communicator/util/UtilActivator.java.felix
++++ jitsi/src/net/java/sip/communicator/util/UtilActivator.java
+@@ -257,16 +257,17 @@
+     public static Map<Object, ProtocolProviderFactory>
+         getProtocolProviderFactories()
+     {
+-        Collection<ServiceReference<ProtocolProviderFactory>> serRefs;
+         Map<Object, ProtocolProviderFactory> providerFactoriesMap
+             = new Hashtable<Object, ProtocolProviderFactory>();
+ 
++        ServiceReference[] serRefs = null;
++
+         try
+         {
+             // get all registered provider factories
+             serRefs
+                 = bundleContext.getServiceReferences(
+-                        ProtocolProviderFactory.class,
++                        ProtocolProviderFactory.class.getName(),
+                         null);
+         }
+         catch (InvalidSyntaxException ex)
+@@ -275,12 +276,12 @@
+             logger.error("LoginManager : " + ex);
+         }
+ 
+-        if ((serRefs != null) && !serRefs.isEmpty())
++        if ((serRefs != null) && (serRefs.length > 0))
+         {
+-            for (ServiceReference<ProtocolProviderFactory> serRef : serRefs)
++            for (ServiceReference serRef : serRefs)
+             {
+                 ProtocolProviderFactory providerFactory
+-                    = bundleContext.getService(serRef);
++                    = (ProtocolProviderFactory) bundleContext.getService(serRef);
+ 
+                 providerFactoriesMap.put(
+                         serRef.getProperty(ProtocolProviderFactory.PROTOCOL),
+--- jitsi/src/net/java/sip/communicator/util/account/LoginManager.java.felix
++++ jitsi/src/net/java/sip/communicator/util/account/LoginManager.java
+@@ -127,10 +127,10 @@
+     {
+         for (AccountID accountID : providerFactory.getRegisteredAccounts())
+         {
+-            ServiceReference<ProtocolProviderService> serRef
++            ServiceReference serRef
+                 = providerFactory.getProviderForAccount(accountID);
+             ProtocolProviderService protocolProvider
+-                = UtilActivator.bundleContext.getService(serRef);
++                = (ProtocolProviderService) UtilActivator.bundleContext.getService(serRef);
+ 
+             handleProviderAdded(protocolProvider);
+         }
+@@ -303,7 +303,7 @@
+      */
+     public void serviceChanged(ServiceEvent event)
+     {
+-        ServiceReference<?> serviceRef = event.getServiceReference();
++        ServiceReference serviceRef = event.getServiceReference();
+ 
+         // if the event is caused by a bundle being stopped, we don't want to
+         // know
+--- jitsi/src/net/java/sip/communicator/service/protocol/ProtocolProviderFactory.java.felix
++++ jitsi/src/net/java/sip/communicator/service/protocol/ProtocolProviderFactory.java
+@@ -550,9 +550,9 @@
+      * achieved by also hiding it from protected into private access.
+      * </p>
+      */
+-    protected final Map<AccountID, ServiceRegistration<ProtocolProviderService>>
++    protected final Map<AccountID, ServiceRegistration>
+         registeredAccounts
+-            = new HashMap<AccountID, ServiceRegistration<ProtocolProviderService>>();
++            = new HashMap<AccountID, ServiceRegistration>();
+ 
+     /**
+      * The name of the property that indicates the AVP type.
+@@ -685,10 +685,10 @@
+      * specified account id and null if the account id is unknown to the
+      * provider factory.
+      */
+-    public ServiceReference<ProtocolProviderService> getProviderForAccount(
++    public ServiceReference getProviderForAccount(
+             AccountID accountID)
+     {
+-        ServiceRegistration<ProtocolProviderService> registration;
++        ServiceRegistration registration;
+ 
+         synchronized (registeredAccounts)
+         {
+@@ -726,7 +726,7 @@
+     public boolean uninstallAccount(AccountID accountID)
+     {
+         // Unregister the protocol provider.
+-        ServiceReference<ProtocolProviderService> serRef
++        ServiceReference serRef
+             = getProviderForAccount(accountID);
+ 
+         boolean wasAccountExisting = false;
+@@ -737,7 +737,7 @@
+         {
+             BundleContext bundleContext = getBundleContext();
+             ProtocolProviderService protocolProvider
+-                = bundleContext.getService(serRef);
++                = (ProtocolProviderService) bundleContext.getService(serRef);
+ 
+             try
+             {
+@@ -751,7 +751,7 @@
+             }
+         }
+ 
+-        ServiceRegistration<ProtocolProviderService> registration;
++        ServiceRegistration registration;
+ 
+         synchronized (registeredAccounts)
+         {
+@@ -1007,9 +1007,9 @@
+         properties.put(PROTOCOL, protocolName);
+         properties.put(USER_ID, userID);
+ 
+-        ServiceRegistration<ProtocolProviderService> serviceRegistration
++        ServiceRegistration serviceRegistration
+             = bundleContext.registerService(
+-                    ProtocolProviderService.class,
++                    ProtocolProviderService.class.getName(),
+                     service,
+                     properties);
+ 
+@@ -1039,7 +1039,7 @@
+     public boolean unloadAccount(AccountID accountID)
+     {
+         // Unregister the protocol provider.
+-        ServiceReference<ProtocolProviderService> serRef
++        ServiceReference serRef
+             = getProviderForAccount(accountID);
+ 
+         if (serRef == null)
+@@ -1049,7 +1049,7 @@
+ 
+         BundleContext bundleContext = getBundleContext();
+         ProtocolProviderService protocolProvider
+-            = bundleContext.getService(serRef);
++            = (ProtocolProviderService) bundleContext.getService(serRef);
+ 
+         try
+         {
+@@ -1062,7 +1062,7 @@
+                         + accountID + " caused by: " + ex);
+         }
+ 
+-        ServiceRegistration<ProtocolProviderService> registration;
++        ServiceRegistration registration;
+ 
+         synchronized (registeredAccounts)
+         {
+@@ -1193,10 +1193,10 @@
+                                        AccountID     accountID,
+                                        String sourcePackageName)
+     {
+-        ServiceReference<ConfigurationService> confReference
+-            = bundleContext.getServiceReference(ConfigurationService.class);
++        ServiceReference confReference
++            = bundleContext.getServiceReference(ConfigurationService.class.getName());
+         ConfigurationService configurationService
+-            = bundleContext.getService(confReference);
++            = (ConfigurationService) bundleContext.getService(confReference);
+ 
+         //first retrieve all accounts that we've registered
+         List<String> storedAccounts =
+@@ -1246,13 +1246,14 @@
+ 
+         synchronized (registeredAccounts)
+         {
+-            for (ServiceRegistration<ProtocolProviderService> reg
++            for (ServiceRegistration reg
+                     : registeredAccounts.values())
+             {
+                 stop(reg);
+                 reg.unregister();
+             }
+ 
++
+             registeredAccounts.clear();
+         }
+     }
+@@ -1266,10 +1267,10 @@
+      *            registered with this factory
+      */
+     protected void stop(
+-            ServiceRegistration<ProtocolProviderService> registeredAccount)
++            ServiceRegistration registeredAccount)
+     {
+         ProtocolProviderService protocolProviderService
+-            = getBundleContext().getService(registeredAccount.getReference());
++            =  (ProtocolProviderService) getBundleContext().getService(registeredAccount.getReference());
+ 
+         protocolProviderService.shutdown();
+     }
+@@ -1282,10 +1283,10 @@
+     private AccountManager getAccountManager()
+     {
+         BundleContext bundleContext = getBundleContext();
+-        ServiceReference<AccountManager> serviceReference
+-            = bundleContext.getServiceReference(AccountManager.class);
++        ServiceReference serviceReference
++            = bundleContext.getServiceReference(AccountManager.class.getName());
+ 
+-        return bundleContext.getService(serviceReference);
++        return (AccountManager) bundleContext.getService(serviceReference);
+     }
+ 
+ 
+@@ -1301,7 +1302,7 @@
+             BundleContext bundleContext,
+             String protocolName)
+     {
+-        Collection<ServiceReference<ProtocolProviderFactory>> serRefs;
++        ServiceReference[] serRefs = null;
+         String osgiFilter
+             = "(" + ProtocolProviderFactory.PROTOCOL + "=" + protocolName + ")";
+ 
+@@ -1309,7 +1310,7 @@
+         {
+             serRefs
+                 = bundleContext.getServiceReferences(
+-                        ProtocolProviderFactory.class,
++                        ProtocolProviderFactory.class.getName(),
+                         osgiFilter);
+         }
+         catch (InvalidSyntaxException ex)
+@@ -1317,9 +1318,9 @@
+             serRefs = null;
+             logger.error(ex);
+         }
+-        if ((serRefs == null) || serRefs.isEmpty())
++        if ((serRefs == null) && (serRefs.length > 0))
+             return null;
+         else
+-            return bundleContext.getService(serRefs.iterator().next());
++            return (ProtocolProviderFactory) bundleContext.getService(serRefs[0]);
+     }
+ }
+--- jitsi/src/net/java/sip/communicator/util/ConfigurationUtils.java.felix
++++ jitsi/src/net/java/sip/communicator/util/ConfigurationUtils.java
+@@ -1666,11 +1666,11 @@
+                 if (!accountId.getAccountUniqueID().equals(savedAccountId))
+                     continue;
+ 
+-                ServiceReference<ProtocolProviderService> serRef
++                ServiceReference serRef
+                     = providerFactory.getProviderForAccount(accountId);
+ 
+                 protocolProvider
+-                    = UtilActivator.bundleContext.getService(serRef);
++                    = (ProtocolProviderService) UtilActivator.bundleContext.getService(serRef);
+                 if (protocolProvider != null)
+                     break;
+             }
+--- jitsi/src/net/java/sip/communicator/util/account/AccountUtils.java.felix
++++ jitsi/src/net/java/sip/communicator/util/account/AccountUtils.java
+@@ -92,13 +92,13 @@
+         {
+             for (AccountID accountID : providerFactory.getRegisteredAccounts())
+             {
+-                ServiceReference<ProtocolProviderService> ref
++                ServiceReference ref
+                     = providerFactory.getProviderForAccount(accountID);
+ 
+                 if (ref != null)
+                 {
+                     ProtocolProviderService protocolProvider
+-                        = UtilActivator.bundleContext.getService(ref);
++                        = (ProtocolProviderService) UtilActivator.bundleContext.getService(ref);
+ 
+                     if ((protocolProvider.getOperationSet(opSetClass) != null)
+                             && protocolProvider.isRegistered())
+@@ -134,13 +134,13 @@
+         {
+             for (AccountID accountID : providerFactory.getRegisteredAccounts())
+             {
+-                ServiceReference<ProtocolProviderService> ref
++                ServiceReference ref
+                     = providerFactory.getProviderForAccount(accountID);
+ 
+                 if (ref != null)
+                 {
+                     ProtocolProviderService protocolProvider
+-                        = UtilActivator.bundleContext.getService(ref);
++                        = (ProtocolProviderService) UtilActivator.bundleContext.getService(ref);
+ 
+                     if ((protocolProvider.getOperationSet(opSetClass) != null)
+                             && protocolProvider.isRegistered())
+@@ -225,12 +225,12 @@
+         {
+             if (factory.getRegisteredAccounts().contains(accountID))
+             {
+-                ServiceReference<ProtocolProviderService> ref
++                ServiceReference ref
+                     = factory.getProviderForAccount(accountID);
+ 
+                 if (ref != null)
+                 {
+-                    return UtilActivator.bundleContext.getService(ref);
++                    return (ProtocolProviderService) UtilActivator.bundleContext.getService(ref);
+                 }
+             }
+         }
+@@ -267,16 +267,16 @@
+ 
+         try
+         {
+-            Collection<ServiceReference<ProtocolProviderFactory>> refs
++            ServiceReference[] refs
+                 = UtilActivator.bundleContext.getServiceReferences(
+-                        ProtocolProviderFactory.class,
++                        ProtocolProviderFactory.class.getName(),
+                         osgiFilter);
+ 
+-            if ((refs != null) && !refs.isEmpty())
++            if ((refs != null) && (refs.length > 0))
+             {
+                 protocolProviderFactory
+-                    = UtilActivator.bundleContext.getService(
+-                            refs.iterator().next());
++                    = (ProtocolProviderFactory) 
++                          UtilActivator.bundleContext.getService(refs[0]);
+             }
+         }
+         catch (InvalidSyntaxException ex)
+@@ -302,13 +302,13 @@
+         {
+             for (AccountID accountID : providerFactory.getRegisteredAccounts())
+             {
+-                ServiceReference<ProtocolProviderService> ref
++                ServiceReference ref
+                     = providerFactory.getProviderForAccount(accountID);
+ 
+                 if (ref != null)
+                 {
+                     ProtocolProviderService protocolProvider
+-                        = UtilActivator.bundleContext.getService(ref);
++                        = (ProtocolProviderService) UtilActivator.bundleContext.getService(ref);
+ 
+                     registeredProviders.add(protocolProvider);
+                 }
+--- jitsi/src/net/java/sip/communicator/impl/globaldisplaydetails/GlobalDisplayDetailsActivator.java.felix
++++ jitsi/src/net/java/sip/communicator/impl/globaldisplaydetails/GlobalDisplayDetailsActivator.java
+@@ -103,17 +103,19 @@
+      */
+     private void handleAlreadyRegisteredProviders()
+     {
+-        Collection<ServiceReference<ProtocolProviderService>> ppsRefs
++        ServiceReference[] ppsRefs
+             = ServiceUtils.getServiceReferences(
+                     bundleContext,
+                     ProtocolProviderService.class);
+ 
+-        if(ppsRefs.isEmpty())
++        if(ppsRefs == null)
+             return;
+ 
+-        for (ServiceReference<ProtocolProviderService> ppsRef : ppsRefs)
++        for (ServiceReference ppsRef : ppsRefs)
+         {
+-            ProtocolProviderService pps = bundleContext.getService(ppsRef);
++            ProtocolProviderService pps
++                = (ProtocolProviderService)
++                    bundleContext.getService(ppsRef);
+ 
+             handleProviderAdded(pps);
+         }
+@@ -224,7 +226,7 @@
+      */
+     public void serviceChanged(ServiceEvent event)
+     {
+-        ServiceReference<?> serviceRef = event.getServiceReference();
++        ServiceReference serviceRef = event.getServiceReference();
+ 
+         // if the event is caused by a bundle being stopped, we don't want to
+         // know
+--- jitsi/src/net/java/sip/communicator/util/ServiceObserver.java.felix
++++ jitsi/src/net/java/sip/communicator/util/ServiceObserver.java
+@@ -105,11 +105,11 @@
+ 
+         ctx.addServiceListener(this);
+ 
+-        Collection<ServiceReference<T>> refs
+-            = ServiceUtils.getServiceReferences(ctx, clazz);
++         ServiceReference[] refs
++                = ServiceUtils.getServiceReferences(ctx, clazz);
++        for(ServiceReference ref : refs)
++            services.add((T) ctx.getService(ref));
+ 
+-        for(ServiceReference<T> ref : refs)
+-            services.add(ctx.getService(ref));
+     }
+ 
+     /**
+--- jitsi/src/net/java/sip/communicator/service/resources/AbstractResourcesService.java.felix
++++ jitsi/src/net/java/sip/communicator/service/resources/AbstractResourcesService.java
+@@ -131,7 +131,7 @@
+             colorResources = getResources(colorPack);
+ 
+         imagePack
+-            = getDefaultResourcePack(
++            = (ImagePack) getDefaultResourcePack(
+                     ImagePack.class,
+                     ImagePack.RESOURCE_NAME_DEFAULT_VALUE);
+ 
+@@ -148,7 +148,7 @@
+                     ResourceManagementServiceUtils.getLocale(defaultLocale));
+ 
+         languagePack
+-            = getDefaultResourcePack(
++            = (LanguagePack) getDefaultResourcePack(
+                     LanguagePack.class,
+                     LanguagePack.RESOURCE_NAME_DEFAULT_VALUE);
+ 
+@@ -175,7 +175,7 @@
+             soundResources = getResources(soundPack);
+ 
+         skinPack
+-            = getDefaultResourcePack(
++            = (SkinPack) getDefaultResourcePack(
+                     SkinPack.class,
+                     SkinPack.RESOURCE_NAME_DEFAULT_VALUE);
+ 
+@@ -278,7 +278,7 @@
+                     && imagePack.equals(resourcePack))
+             {
+                 imagePack
+-                    = getDefaultResourcePack(
++                    = (ImagePack) getDefaultResourcePack(
+                             ImagePack.class,
+                             ImagePack.RESOURCE_NAME_DEFAULT_VALUE);
+                 if (imagePack != null)
+@@ -288,7 +288,7 @@
+                     && languagePack.equals(resourcePack))
+             {
+                 languagePack
+-                    = getDefaultResourcePack(
++                    = (LanguagePack) getDefaultResourcePack(
+                             LanguagePack.class,
+                             LanguagePack.RESOURCE_NAME_DEFAULT_VALUE);
+             }
+@@ -331,7 +331,7 @@
+                 }
+ 
+                 skinPack
+-                    = getDefaultResourcePack(
++                    = (SkinPack) getDefaultResourcePack(
+                             SkinPack.class,
+                             SkinPack.RESOURCE_NAME_DEFAULT_VALUE);
+                 if (skinPack != null)
+@@ -361,17 +361,19 @@
+      * @return the <tt>ResourcePack</tt> corresponding to the given
+      * <tt>className</tt> and <tt></tt>.
+      */
+-    protected <T extends ResourcePack> T getDefaultResourcePack(
+-            Class<T> clazz,
++    protected ResourcePack getDefaultResourcePack(
++            Class clazz,
+             String typeName)
+     {
+-        Collection<ServiceReference<T>> serRefs;
++        ServiceReference[] serRefs = null;
+         String osgiFilter
+             = "(" + ResourcePack.RESOURCE_NAME + "=" + typeName + ")";
+ 
+         try
+         {
+-            serRefs = bundleContext.getServiceReferences(clazz, osgiFilter);
++            serRefs = bundleContext.getServiceReferences(
++                    clazz.getName(),
++                    osgiFilter);
+         }
+         catch (InvalidSyntaxException ex)
+         {
+@@ -379,9 +381,9 @@
+             logger.error("Could not obtain resource packs reference.", ex);
+         }
+ 
+-        if ((serRefs != null) && !serRefs.isEmpty())
++        if ((serRefs != null) && (serRefs.length > 0))
+         {
+-            return bundleContext.getService(serRefs.iterator().next());
++            return (ResourcePack) bundleContext.getService(serRefs[0]);
+         }
+         return null;
+     }
+--- jitsi/src/net/java/sip/communicator/service/systray/AbstractSystrayService.java.felix
++++ jitsi/src/net/java/sip/communicator/service/systray/AbstractSystrayService.java
+@@ -257,24 +257,24 @@
+ 
+         // now we look if some handler has been registered before we start
+         // to listen
+-        Collection<ServiceReference<PopupMessageHandler>> handlerRefs
++        ServiceReference[] handlerRefs
+             = ServiceUtils.getServiceReferences(
+                     bundleContext,
+                     PopupMessageHandler.class);
+ 
+-        if (!handlerRefs.isEmpty())
++        if (handlerRefs != null)
+         {
+             ConfigurationService config
+                 = ServiceUtils.getService(
+                         bundleContext,
+                         ConfigurationService.class);
+             String configuredHandler
+-                = config.getString("systray.POPUP_HANDLER");
++                = (String) config.getString("systray.POPUP_HANDLER");
+ 
+-            for (ServiceReference<PopupMessageHandler> handlerRef : handlerRefs)
++            for (ServiceReference handlerRef : handlerRefs)
+             {
+                 PopupMessageHandler handler
+-                    = bundleContext.getService(handlerRef);
++                    = (PopupMessageHandler) bundleContext.getService(handlerRef);
+                 String handlerName = handler.getClass().getName();
+ 
+                 if (!containsHandler(handlerName))
+--- jitsi/src/net/java/sip/communicator/impl/callhistory/CallHistoryActivator.java.felix
++++ jitsi/src/net/java/sip/communicator/impl/callhistory/CallHistoryActivator.java
+@@ -158,17 +158,27 @@
+     public static Map<Object, ProtocolProviderFactory>
+         getProtocolProviderFactories()
+     {
+-        Collection<ServiceReference<ProtocolProviderFactory>> serRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bundleContext,
+-                    ProtocolProviderFactory.class);
++        ServiceReference[] serRefs = null;
+ 
+-        if (!serRefs.isEmpty())
++        try
+         {
+-            for (ServiceReference<ProtocolProviderFactory> serRef : serRefs)
++            // get all registered provider factories
++            serRefs =
++                bundleContext.getServiceReferences(
++                    ProtocolProviderFactory.class.getName(), null);
++ 
++        }
++        catch (InvalidSyntaxException e)
++        {
++            logger.error("LoginManager : " + e);
++        }
++
++        if (serRefs != null)
++        {
++            for (ServiceReference serRef : serRefs)
+             {
+                 ProtocolProviderFactory providerFactory
+-                    = bundleContext.getService(serRef);
++                    =  (ProtocolProviderFactory) bundleContext.getService(serRef);
+ 
+                 providerFactoriesMap.put(
+                         serRef.getProperty(ProtocolProviderFactory.PROTOCOL),
+--- jitsi/src/net/java/sip/communicator/impl/argdelegation/ArgDelegationPeerImpl.java.felix
++++ jitsi/src/net/java/sip/communicator/impl/argdelegation/ArgDelegationPeerImpl.java
+@@ -59,25 +59,39 @@
+      */
+     public ArgDelegationPeerImpl(BundleContext bundleContext)
+     {
+-        Collection<ServiceReference<UriHandler>> uriHandlerRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bundleContext,
+-                    UriHandler.class);
++        ServiceReference[] uriHandlerRefs;
+ 
+-        if (!uriHandlerRefs.isEmpty())
++        try
+         {
+-            synchronized (uriHandlers)
++            uriHandlerRefs = bundleContext.getServiceReferences(
++                                UriHandler.class.getName(), null);
++        }
++        catch (InvalidSyntaxException exc)
++        {
++            // this shouldn't happen because we aren't using a filter
++            // but let's log just the same.
++            if (logger.isInfoEnabled())
++                logger.info("An error occurred while retrieving UriHandlers", exc);
++            return;
++        }
++
++        if(uriHandlerRefs == null)
++        {
++            //none URI handlers are registered at this point. Some might
++            //come later.
++            return;
++        }
++
++        synchronized (uriHandlers)
++        {
++            for (ServiceReference uriHandlerRef : uriHandlerRefs)
+             {
+-                for (ServiceReference<UriHandler> uriHandlerRef
+-                        : uriHandlerRefs)
+-                {
+-                    UriHandler uriHandler
+-                        = bundleContext.getService(uriHandlerRef);
++                UriHandler uriHandler = (UriHandler) bundleContext
++                                .getService(uriHandlerRef);
+ 
+-                    for (String protocol : uriHandler.getProtocol())
+-                    {
+-                        uriHandlers.put(protocol, uriHandler);
+-                    }
++                for (String protocol : uriHandler.getProtocol())
++                {
++                   uriHandlers.put(protocol, uriHandler);
+                 }
+             }
+         }
+--- jitsi/src/net/java/sip/communicator/impl/callhistory/CallHistoryServiceImpl.java.felix
++++ jitsi/src/net/java/sip/communicator/impl/callhistory/CallHistoryServiceImpl.java
+@@ -616,23 +616,37 @@
+         // start listening for newly register or removed protocol providers
+         bc.addServiceListener(this);
+ 
+-        Collection<ServiceReference<ProtocolProviderService>> ppsRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bc,
+-                    ProtocolProviderService.class);
++        ServiceReference[] ppsRefs = null;
++
++        try
++        {
++            ppsRefs
++                = bc.getServiceReferences(
++                        ProtocolProviderService.class.getName(),
++                        null);
++        }
++        catch (InvalidSyntaxException ex)
++        {
++            ppsRefs = null;
++            // this shouldn't happen since we're providing no parameter string
++            // but let's log just in case.
++            logger.error("Error while retrieving service refs", ex);
++        }
+ 
+         // in case we found any
+-        if (!ppsRefs.isEmpty())
++        if (ppsRefs != null)
+         {
+             if (logger.isDebugEnabled())
+             {
+                 logger.debug(
+-                        "Found " + ppsRefs.size()
++                        "Found " + ppsRefs.length
+                             + " already installed providers.");
+             }
+-            for (ServiceReference<ProtocolProviderService> ppsRef : ppsRefs)
++            for (ServiceReference ppsRef : ppsRefs)
+             {
+-                ProtocolProviderService pps = bc.getService(ppsRef);
++                ProtocolProviderService pps
++                    = (ProtocolProviderService)
++                        bc.getService(ppsRef);
+ 
+                 handleProviderAdded(pps);
+             }
+@@ -648,19 +662,33 @@
+     {
+         bc.removeServiceListener(this);
+ 
+-        Collection<ServiceReference<ProtocolProviderService>> ppsRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bc,
+-                    ProtocolProviderService.class);
++        ServiceReference[] ppsRefs = null;
++
++        try
++        {
++            ppsRefs
++                = bc.getServiceReferences(
++                        ProtocolProviderService.class.getName(),
++                        null);
++        }
++        catch (InvalidSyntaxException ex)
++        {
++            ppsRefs = null;
++            // this shouldn't happen since we're providing no parameter string
++            // but let's log just in case.
++            logger.error("Error while retrieving service refs", ex);
++        }
+ 
+         // in case we found any
+-        if (!ppsRefs.isEmpty())
++        if (ppsRefs != null)
+         {
+-            for (ServiceReference<ProtocolProviderService> ppsRef : ppsRefs)
++            for (ServiceReference ppsRef : ppsRefs)
+             {
+-                ProtocolProviderService pps = bc.getService(ppsRef);
++                ProtocolProviderService provider
++                    = (ProtocolProviderService)
++                        bc.getService(ppsRef);
+ 
+-                handleProviderRemoved(pps);
++                handleProviderRemoved(provider);
+             }
+         }
+     }
+@@ -1517,10 +1545,10 @@
+             {
+                 if (accountID.getAccountUniqueID().equals(accountUID))
+                 {
+-                    ServiceReference<ProtocolProviderService> serRef
++                    ServiceReference serRef
+                         = providerFactory.getProviderForAccount(accountID);
+ 
+-                    return
++                    return (ProtocolProviderService)
+                         CallHistoryActivator.bundleContext.getService(serRef);
+                 }
+             }
+--- jitsi/src/net/java/sip/communicator/impl/contactlist/MetaContactListServiceImpl.java.felix
++++ jitsi/src/net/java/sip/communicator/impl/contactlist/MetaContactListServiceImpl.java
+@@ -180,24 +180,35 @@
+ 
+         // first discover the icq service
+         // then find the protocol provider service
+-        Collection<ServiceReference<ProtocolProviderService>> ppsRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bc,
+-                    ProtocolProviderService.class);
++        ServiceReference[] ppsRefs = null;
++        try
++        {
++            ppsRefs = bc.getServiceReferences(
++                ProtocolProviderService.class.getName(),
++                null);
++        }
++        catch (InvalidSyntaxException ex)
++        {
++            // this shouldn't happen since we're providing no parameter string
++            // but let's log just in case.
++            logger.error(
++                "Error while retrieving service refs", ex);
++            return;
++        }
+ 
+         // in case we found any, retrieve the root groups for all protocol
+         // providers and create the meta contact list
+-        if (!ppsRefs.isEmpty())
++        if (ppsRefs != null)
+         {
+             if (logger.isDebugEnabled())
+             {
+                 logger.debug(
+-                        "Found " + ppsRefs.size()
++                        "Found " + ppsRefs.length
+                             + " already installed providers.");
+             }
+-            for (ServiceReference<ProtocolProviderService> ppsRef : ppsRefs)
++            for (ServiceReference ppsRef : ppsRefs)
+             {
+-                ProtocolProviderService pps = bc.getService(ppsRef);
++                ProtocolProviderService pps = (ProtocolProviderService) bc.getService(ppsRef);
+ 
+                 handleProviderAdded(pps);
+             }
+@@ -2354,10 +2365,10 @@
+         // before that however, we'd need to get a reference to the service.
+         ProtocolProviderFactory sourceFactory = null;
+ 
+-        ServiceReference<?>[] allBundleServices
++        ServiceReference [] allBundleServices
+             = event.getServiceReference().getBundle().getRegisteredServices();
+ 
+-        for (ServiceReference<?> bundleServiceRef : allBundleServices)
++        for (ServiceReference bundleServiceRef : allBundleServices)
+         {
+             Object service = bundleContext.getService(bundleServiceRef);
+             if(service instanceof ProtocolProviderFactory)
+--- jitsi/src/net/java/sip/communicator/impl/gui/main/contactlist/ContactSearchFieldUI.java.felix
++++ jitsi/src/net/java/sip/communicator/impl/gui/main/contactlist/ContactSearchFieldUI.java
+@@ -139,7 +139,7 @@
+             for(AccountID accountID : providerFactory.getRegisteredAccounts())
+             {
+                 ProtocolProviderService pps 
+-                    = GuiActivator.bundleContext.getService(
++                    = (ProtocolProviderService) GuiActivator.bundleContext.getService(
+                             providerFactory.getProviderForAccount(accountID));
+                 providers.add(pps);
+                 pps.addRegistrationStateChangeListener(
+--- jitsi/src/net/java/sip/communicator/plugin/otr/OtrActivator.java.felix
++++ jitsi/src/net/java/sip/communicator/plugin/otr/OtrActivator.java
+@@ -1,4 +1,4 @@
+-/*
++	/*
+  * Jitsi, the OpenSource Java VoIP and Instant Messaging client.
+  *
+  * Copyright @ 2015 Atlassian Pty Ltd
+@@ -177,19 +177,30 @@
+     private static Map<Object, ProtocolProviderFactory>
+         getProtocolProviderFactories()
+     {
+-        Collection<ServiceReference<ProtocolProviderFactory>> serRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bundleContext,
+-                    ProtocolProviderFactory.class);
++        ServiceReference[] serRefs;
++        try
++        {
++            // get all registered provider factories
++            serRefs =
++                bundleContext.getServiceReferences(
++                    ProtocolProviderFactory.class.getName(), null);
++
++        }
++        catch (InvalidSyntaxException ex)
++        {
++            logger.error("Error while retrieving service refs", ex);
++            return null;
++        }
++
+         Map<Object, ProtocolProviderFactory> providerFactoriesMap
+             = new Hashtable<Object, ProtocolProviderFactory>();
+ 
+-        if (!serRefs.isEmpty())
++        if (serRefs != null) 
+         {
+-            for (ServiceReference<ProtocolProviderFactory> serRef : serRefs)
++            for (ServiceReference serRef : serRefs)
+             {
+                 ProtocolProviderFactory providerFactory
+-                    = bundleContext.getService(serRef);
++                    = (ProtocolProviderFactory) bundleContext.getService(serRef);
+ 
+                 providerFactoriesMap.put(
+                         serRef.getProperty(ProtocolProviderFactory.PROTOCOL),
+@@ -318,24 +329,24 @@
+         bundleContext.addServiceListener(scOtrEngine);
+         bundleContext.addServiceListener(otrContactManager);
+ 
+-        Collection<ServiceReference<ProtocolProviderService>> protocolProviderRefs
++        ServiceReference[] protocolProviderRefs
+             = ServiceUtils.getServiceReferences(
+                     bundleContext,
+                     ProtocolProviderService.class);
+ 
+-        if (!protocolProviderRefs.isEmpty())
++        if (protocolProviderRefs != null && protocolProviderRefs.length > 0)
+         {
+             if (logger.isDebugEnabled())
+             {
+                 logger.debug(
+-                        "Found " + protocolProviderRefs.size()
++                        "Found " + protocolProviderRefs.length
+                             + " already installed providers.");
+             }
+-            for (ServiceReference<ProtocolProviderService> protocolProviderRef
++            for (ServiceReference protocolProviderRef
+                     : protocolProviderRefs)
+             {
+                 ProtocolProviderService provider
+-                    = bundleContext.getService(protocolProviderRef);
++                    = (ProtocolProviderService) bundleContext.getService(protocolProviderRef);
+ 
+                 handleProviderAdded(provider);
+             }
+@@ -436,19 +447,29 @@
+         if(otrContactManager != null)
+             bundleContext.removeServiceListener(otrContactManager);
+ 
+-        Collection<ServiceReference<ProtocolProviderService>> protocolProviderRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bundleContext,
+-                    ProtocolProviderService.class);
++        ServiceReference[] protocolProviderRefs;
++        try
++        {
++            protocolProviderRefs =
++                bundleContext.getServiceReferences(
++                    ProtocolProviderService.class.getName(), null);
++        }
++        catch (InvalidSyntaxException ex)
++        {
++            // this shouldn't happen since we're providing no parameter string
++            // but let's log just in case.
++            logger.error("Error while retrieving service refs", ex);
++            return;
++        }
+ 
+-        if (!protocolProviderRefs.isEmpty())
++        if (protocolProviderRefs != null && protocolProviderRefs.length > 0)
+         {
+             // in case we found any
+-            for (ServiceReference<ProtocolProviderService> protocolProviderRef
++            for (ServiceReference protocolProviderRef
+                     : protocolProviderRefs)
+             {
+                 ProtocolProviderService provider
+-                    = bundleContext.getService(protocolProviderRef);
++                    = (ProtocolProviderService) bundleContext.getService(protocolProviderRef);
+ 
+                 handleProviderRemoved(provider);
+             }
+--- jitsi/src/net/java/sip/communicator/impl/filehistory/FileHistoryServiceImpl.java.felix
++++ jitsi/src/net/java/sip/communicator/impl/filehistory/FileHistoryServiceImpl.java
+@@ -87,23 +87,34 @@
+         // start listening for newly register or removed protocol providers
+         bc.addServiceListener(this);
+ 
+-        Collection<ServiceReference<ProtocolProviderService>> ppsRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bc,
+-                    ProtocolProviderService.class);
++        ServiceReference[] ppsRefs = null;
++        try
++        {
++            ppsRefs = bc.getServiceReferences(
++                ProtocolProviderService.class.getName(),
++                null);
++        }
++        catch (InvalidSyntaxException ex)
++        {
++            // this shouldn't happen since we're providing no parameter string
++            // but let's log just in case.
++            logger.error(
++                "Error while retrieving service refs", ex);
++            return;
++        }
+ 
+         // in case we found any
+-        if (!ppsRefs.isEmpty())
++        if (ppsRefs != null)
+         {
+             if (logger.isDebugEnabled())
+             {
+                 logger.debug(
+-                        "Found " + ppsRefs.size()
++                        "Found " + ppsRefs.length
+                             + " already installed providers.");
+             }
+-            for (ServiceReference<ProtocolProviderService> ppsRef : ppsRefs)
++            for (ServiceReference ppsRef : ppsRefs)
+             {
+-                ProtocolProviderService pps = bc.getService(ppsRef);
++                ProtocolProviderService pps = (ProtocolProviderService) bc.getService(ppsRef);
+ 
+                 handleProviderAdded(pps);
+             }
+@@ -119,17 +130,27 @@
+     {
+         bc.removeServiceListener(this);
+ 
+-        Collection<ServiceReference<ProtocolProviderService>> ppsRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bc,
+-                    ProtocolProviderService.class);
++        ServiceReference[] ppsRefs = null;
++        try
++        {
++            ppsRefs = bc.getServiceReferences(
++                ProtocolProviderService.class.getName(),
++                null);
++        }
++        catch (InvalidSyntaxException ex)
++        {
++            // this shouldn't happen since we're providing no parameter string
++            // but let's log just in case.
++            logger.error("Error while retrieving service refs", ex);
++            return;
++        }
+ 
+         // in case we found any
+-        if (!ppsRefs.isEmpty())
++        if (ppsRefs != null)
+         {
+-            for (ServiceReference<ProtocolProviderService> ppsRef : ppsRefs)
++            for (ServiceReference ppsRef : ppsRefs)
+             {
+-                ProtocolProviderService pps = bc.getService(ppsRef);
++                ProtocolProviderService pps = (ProtocolProviderService) bc.getService(ppsRef);
+ 
+                 handleProviderRemoved(pps);
+             }
+--- jitsi/src/net/java/sip/communicator/impl/globalshortcut/GlobalShortcutActivator.java.felix
++++ jitsi/src/net/java/sip/communicator/impl/globalshortcut/GlobalShortcutActivator.java
+@@ -156,7 +156,7 @@
+      */
+     private void serviceChanged(ServiceEvent event)
+     {
+-        ServiceReference<?> serviceRef = event.getServiceReference();
++        ServiceReference serviceRef = event.getServiceReference();
+ 
+         // if the event is caused by a bundle being stopped, we don't want to
+         // know
+@@ -189,16 +189,30 @@
+      */
+     public void registerListenerWithProtocolProviderService()
+     {
+-        Collection<ServiceReference<ProtocolProviderService>> ppsRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bundleContext,
+-                    ProtocolProviderService.class);
++        ServiceReference[] ppsRefs = null;
+ 
+-        if(!ppsRefs.isEmpty())
++        try
+         {
+-            for(ServiceReference<ProtocolProviderService> ppsRef : ppsRefs)
++             ppsRefs
++                 = bundleContext.getServiceReferences(
++                         ProtocolProviderService.class.getName(),
++                         null);
++        }
++        catch(InvalidSyntaxException ise)
++        {
++            logger.error(
++                    "Failed to get ProtocolProviderService ServiceReferences",
++                    ise);
++        }
++
++        if(ppsRefs == null)
++            return;
++
++        if(ppsRefs != null)
++        {
++            for(ServiceReference ppsRef : ppsRefs)
+             {
+-                ProtocolProviderService pps = bundleContext.getService(ppsRef);
++                ProtocolProviderService pps = (ProtocolProviderService) bundleContext.getService(ppsRef);
+                 OperationSetBasicTelephony<?> opSet
+                     = pps.getOperationSet(OperationSetBasicTelephony.class);
+ 
+--- jitsi/src/net/java/sip/communicator/impl/gui/GuiActivator.java.felix
++++ jitsi/src/net/java/sip/communicator/impl/gui/GuiActivator.java
+@@ -255,17 +255,26 @@
+     public static Map<Object, ProtocolProviderFactory>
+         getProtocolProviderFactories()
+     {
+-        Collection<ServiceReference<ProtocolProviderFactory>> serRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bundleContext,
+-                    ProtocolProviderFactory.class);
++        ServiceReference[] serRefs = null;
++        try
++        {
++            // get all registered provider factories
++            serRefs
++                = bundleContext.getServiceReferences(
++                        ProtocolProviderFactory.class.getName(),
++                        null);
++        }
++        catch (InvalidSyntaxException e)
++        {
++            logger.error("LoginManager : " + e);
++        }
+ 
+-        if (!serRefs.isEmpty())
++        if (serRefs != null)
+         {
+-            for (ServiceReference<ProtocolProviderFactory> serRef : serRefs)
++            for (ServiceReference serRef : serRefs)
+             {
+                 ProtocolProviderFactory providerFactory
+-                    = bundleContext.getService(serRef);
++                    = (ProtocolProviderFactory) bundleContext.getService(serRef);
+ 
+                 providerFactoriesMap.put(
+                         serRef.getProperty(ProtocolProviderFactory.PROTOCOL),
+@@ -578,17 +587,25 @@
+     {
+         contactSources = new Vector<ContactSourceService>();
+ 
+-        Collection<ServiceReference<ContactSourceService>> serRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bundleContext,
+-                    ContactSourceService.class);
++        ServiceReference[] serRefs = null;
++        try
++        {
++            // get all registered provider factories
++            serRefs =
++                bundleContext.getServiceReferences(
++                    ContactSourceService.class.getName(), null);
++        }
++        catch (InvalidSyntaxException e)
++        {
++            logger.error("GuiActivator : " + e);
++        }
+ 
+-        if (!serRefs.isEmpty())
++        if (serRefs != null)
+         {
+-            for (ServiceReference<ContactSourceService> serRef : serRefs)
++            for (ServiceReference serRef : serRefs)
+             {
+                 ContactSourceService contactSource
+-                    = bundleContext.getService(serRef);
++                    = (ContactSourceService) bundleContext.getService(serRef);
+ 
+                 contactSources.add(contactSource);
+             }
+@@ -605,17 +622,26 @@
+      */
+     public static Map<String, ReplacementService> getReplacementSources()
+     {
+-        Collection<ServiceReference<ReplacementService>> serRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bundleContext,
+-                    ReplacementService.class);
++        ServiceReference[] serRefs = null;
++        try
++        {
++            // get all registered sources
++            serRefs
++                = bundleContext.getServiceReferences(ReplacementService.class
++                    .getName(), null);
+ 
+-        if (!serRefs.isEmpty())
++        }
++        catch (InvalidSyntaxException e)
++        {
++            logger.error("Error : " + e);
++        }
++
++        if (serRefs != null)
+         {
+-            for (ServiceReference<ReplacementService> serRef : serRefs)
++            for (ServiceReference serRef : serRefs)
+             {
+                 ReplacementService replacementSources
+-                    = bundleContext.getService(serRef);
++                    = (ReplacementService) bundleContext.getService(serRef);
+ 
+                 replacementSourcesMap.put(
+                         (String)
+@@ -713,17 +739,16 @@
+ 
+         try
+         {
+-            Collection<ServiceReference<SecurityAuthority>> serRefs
++            ServiceReference[] serRefs
+                 = bundleContext.getServiceReferences(
+-                        SecurityAuthority.class,
++                        SecurityAuthority.class.getName(),
+                         osgiFilter);
+ 
+-            if (!serRefs.isEmpty())
++            if (serRefs != null && serRefs.length > 0)
+             {
+-                ServiceReference<SecurityAuthority> serRef
+-                    = serRefs.iterator().next();
+-
+-                securityAuthority = bundleContext.getService(serRef);
++                securityAuthority
++                    = (SecurityAuthority) bundleContext
++                        .getService(serRefs[0]);
+             }
+         }
+         catch (InvalidSyntaxException ex)
+@@ -784,10 +809,23 @@
+         if(prefWName == null || prefWName.length() <= 0)
+             return null;
+ 
+-        Collection<ServiceReference<AccountRegistrationWizard>> accountWizardRefs
+-            = ServiceUtils.getServiceReferences(
+-                    GuiActivator.bundleContext,
+-                    AccountRegistrationWizard.class);
++        ServiceReference[] accountWizardRefs = null;
++        try
++        {
++            accountWizardRefs = GuiActivator.bundleContext
++                .getServiceReferences(
++                    AccountRegistrationWizard.class.getName(),
++                    null);
++        }
++        catch (InvalidSyntaxException ex)
++        {
++            // this shouldn't happen since we're providing no parameter string
++            // but let's log just in case.
++            logger.error(
++                "Error while retrieving service refs", ex);
++            return null;
++        }
++
+ 
+         // in case we found any, add them in this container.
+         if (accountWizardRefs != null)
+@@ -795,15 +833,15 @@
+             if (logger.isDebugEnabled())
+             {
+                 logger.debug(
+-                        "Found " + accountWizardRefs.size()
++                        "Found " + accountWizardRefs.length
+                             + " already installed providers.");
+             }
+ 
+-            for (ServiceReference<AccountRegistrationWizard> accountWizardRef
++            for (ServiceReference accountWizardRef
+                     : accountWizardRefs)
+             {
+                 AccountRegistrationWizard wizard
+-                    = GuiActivator.bundleContext.getService(accountWizardRef);
++                    = (AccountRegistrationWizard) GuiActivator.bundleContext.getService(accountWizardRef);
+ 
+                 // is it the preferred protocol ?
+                 if(wizard.getClass().getName().equals(prefWName))
+@@ -814,11 +852,11 @@
+                         for (AccountID accountID
+                                 : providerFactory.getRegisteredAccounts())
+                         {
+-                            ServiceReference<ProtocolProviderService> serRef
++                            ServiceReference serRef
+                                 = providerFactory.getProviderForAccount(
+                                         accountID);
+-                            ProtocolProviderService protocolProvider
+-                                = GuiActivator.bundleContext.getService(serRef);
++                            ProtocolProviderService protocolProvider
++                                = (ProtocolProviderService) GuiActivator.bundleContext.getService(serRef);
+ 
+                             if (protocolProvider.getAccountID()
+                                     .getProtocolDisplayName()
+--- jitsi/src/net/java/sip/communicator/impl/gui/main/chatroomslist/AdHocChatRoomList.java.felix
++++ jitsi/src/net/java/sip/communicator/impl/gui/main/chatroomslist/AdHocChatRoomList.java
+@@ -34,6 +34,9 @@
+  */
+ public class AdHocChatRoomList
+ {
++    private static final Logger logger
++        = Logger.getLogger(AdHocChatRoomList.class);
++
+     /**
+      * The list containing all chat servers and ad-hoc rooms.
+      */
+@@ -45,17 +48,21 @@
+      */
+     public void loadList()
+     {
+-        Collection<ServiceReference<ProtocolProviderService>> serRefs
+-            = ServiceUtils.getServiceReferences(
+-                    GuiActivator.bundleContext,
+-                    ProtocolProviderService.class);
+-
+-        if ((serRefs != null) && !serRefs.isEmpty())
++        try
+         {
+-            for (ServiceReference<ProtocolProviderService> serRef : serRefs)
++            ServiceReference[] serRefs
++                = GuiActivator.bundleContext.getServiceReferences(
++                                        ProtocolProviderService.class.getName(),
++                                        null);
++
++            // If we don't have providers at this stage we just return.
++            if (serRefs == null)
++                return;
++
++            for (ServiceReference serRef : serRefs)
+             {
+                 ProtocolProviderService protocolProvider
+-                    = GuiActivator.bundleContext.getService(serRef);
++                    = (ProtocolProviderService) GuiActivator.bundleContext.getService(serRef);
+                 Object adHocMultiUserChatOpSet
+                     = protocolProvider.getOperationSet(
+                             OperationSetAdHocMultiUserChat.class);
+@@ -64,6 +71,10 @@
+                     addChatProvider(protocolProvider);
+             }
+         }
++        catch (InvalidSyntaxException e)
++        {
++            logger.error("Failed to obtain service references.", e);
++        }
+     }
+ 
+     /**
+--- jitsi/src/net/java/sip/communicator/impl/muc/MUCActivator.java.felix
++++ jitsi/src/net/java/sip/communicator/impl/muc/MUCActivator.java
+@@ -42,6 +42,13 @@
+     implements  BundleActivator
+ {
+     /**
++     * The <tt>Logger</tt> used by the
++     * <tt>MUCActivator</tt> class for logging output.
++     */
++    private static final Logger logger
++        = Logger.getLogger(MUCActivator.class);
++
++    /**
+      * The configuration property to disable
+      */
+     private static final String DISABLED_PROPERTY
+@@ -286,25 +293,35 @@
+         protocolProviderRegListener = new ProtocolProviderRegListener();
+         bundleContext.addServiceListener(protocolProviderRegListener);
+ 
+-        Collection<ServiceReference<ProtocolProviderFactory>> serRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bundleContext,
+-                    ProtocolProviderFactory.class);
++        ServiceReference[] serRefs = null;
++        try
++        {
++            // get all registered provider factories
++            serRefs
++                = bundleContext.getServiceReferences(
++                        ProtocolProviderFactory.class.getName(),
++                        null);
++        }
++        catch (InvalidSyntaxException e)
++        {
++            serRefs = null;
++            logger.error("LoginManager : " + e);
++        }
+ 
+-        if (!serRefs.isEmpty())
++        if (serRefs != null)
+         {
+-            for (ServiceReference<ProtocolProviderFactory> ppfSerRef : serRefs)
++            for (ServiceReference ppfSerRef : serRefs)
+             {
+                 ProtocolProviderFactory providerFactory
+-                    = bundleContext.getService(ppfSerRef);
++                    = (ProtocolProviderFactory) bundleContext.getService(ppfSerRef);
+ 
+                 for (AccountID accountID
+                         : providerFactory.getRegisteredAccounts())
+                 {
+-                    ServiceReference<ProtocolProviderService> ppsSerRef
++                    ServiceReference ppsSerRef
+                         = providerFactory.getProviderForAccount(accountID);
+                     ProtocolProviderService protocolProvider
+-                        = bundleContext.getService(ppsSerRef);
++                        = (ProtocolProviderService) bundleContext.getService(ppsSerRef);
+ 
+                     handleProviderAdded(protocolProvider);
+                 }
+@@ -324,7 +341,7 @@
+          */
+         public void serviceChanged(ServiceEvent event)
+         {
+-            ServiceReference<?> serviceRef = event.getServiceReference();
++            ServiceReference serviceRef = event.getServiceReference();
+ 
+             // if the event is caused by a bundle being stopped, we don't want to
+             // know
+--- jitsi/src/net/java/sip/communicator/plugin/securityconfig/SecurityConfigActivator.java.felix
++++ jitsi/src/net/java/sip/communicator/plugin/securityconfig/SecurityConfigActivator.java
+@@ -36,6 +36,12 @@
+ public class SecurityConfigActivator
+     implements BundleActivator
+ {
++     /**
++     * The logger.
++     */
++    private static Logger logger
++        = Logger.getLogger(SecurityConfigActivator.class);
++
+     /**
+      * The {@link BundleContext} of the {@link SecurityConfigActivator}.
+      */
+@@ -240,19 +246,30 @@
+     private static Map<Object, ProtocolProviderFactory>
+         getProtocolProviderFactories()
+     {
+-        Collection<ServiceReference<ProtocolProviderFactory>> serRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bundleContext,
+-                    ProtocolProviderFactory.class);
++        ServiceReference[] serRefs = null;
++        try
++        {
++            // get all registered provider factories
++            serRefs =
++                bundleContext.getServiceReferences(
++                    ProtocolProviderFactory.class.getName(), null);
++
++        }
++        catch (InvalidSyntaxException ex)
++        {
++            logger.error("Error while retrieving service refs", ex);
++            return null;
++        }
++
+         Map<Object, ProtocolProviderFactory> providerFactoriesMap
+             = new Hashtable<Object, ProtocolProviderFactory>();
+ 
+-        if ((serRefs != null) && !serRefs.isEmpty())
++        if (serRefs != null && serRefs.length > 0)
+         {
+-            for (ServiceReference<ProtocolProviderFactory> serRef : serRefs)
++            for (ServiceReference serRef : serRefs)
+             {
+                 ProtocolProviderFactory providerFactory
+-                    = bundleContext.getService(serRef);
++                    = (ProtocolProviderFactory) bundleContext.getService(serRef);
+ 
+                 providerFactoriesMap.put(
+                         serRef.getProperty(ProtocolProviderFactory.PROTOCOL),
+--- jitsi/src/net/java/sip/communicator/impl/osdependent/jdic/StatusSubMenu.java.felix
++++ jitsi/src/net/java/sip/communicator/impl/osdependent/jdic/StatusSubMenu.java
+@@ -299,18 +299,30 @@
+     private List<ProtocolProviderService> getProtocolProviders()
+     {
+         BundleContext bundleContext = OsDependentActivator.bundleContext;
+-        Collection<ServiceReference<ProtocolProviderService>> ppsRefs
+-            = ServiceUtils.getServiceReferences(
+-                    bundleContext,
+-                    ProtocolProviderService.class);
+         List<ProtocolProviderService> protocolProviders
+             = new ArrayList<ProtocolProviderService>();
+ 
++        ServiceReference[] ppsRefs = null;
++        try
++        {
++            ppsRefs
++                = bundleContext.getServiceReferences(
++                    ProtocolProviderService.class.getName(), null);
++        }
++        catch (InvalidSyntaxException ex)
++        {
++            return protocolProviders;
++        }
++        catch(IllegalStateException ise)
++        {
++            // happens sometimes on stopping felix
++        }
++
+         // in case we found any
+-        if ((ppsRefs != null) && !ppsRefs.isEmpty())
++        if (ppsRefs != null)
+         {
+-            for (ServiceReference<ProtocolProviderService> ppsRef : ppsRefs)
+-                protocolProviders.add(bundleContext.getService(ppsRef));
++            for (ServiceReference ppsRef : ppsRefs)
++                protocolProviders.add( (ProtocolProviderService) bundleContext.getService(ppsRef));
+         }
+         return protocolProviders;
+     }
+@@ -543,7 +555,7 @@
+         {
+             //if the event is caused by a bundle being stopped, we don't want to
+             //know
+-            ServiceReference<?> serviceRef = event.getServiceReference();
++            ServiceReference serviceRef = event.getServiceReference();
+ 
+             if(serviceRef.getBundle().getState() == Bundle.STOPPING)
+                 return;
+--- jitsi/src/net/java/sip/communicator/impl/protocol/sip/ProtocolProviderServiceSipImpl.java.felix
++++ jitsi/src/net/java/sip/communicator/impl/protocol/sip/ProtocolProviderServiceSipImpl.java
+@@ -1589,12 +1589,13 @@
+             Set<ProtocolProviderServiceSipImpl> instances
+                 = new HashSet<ProtocolProviderServiceSipImpl>();
+             BundleContext context = SipActivator.getBundleContext();
+-            Collection<ServiceReference<ProtocolProviderService>> references =
+-                context.getServiceReferences(ProtocolProviderService.class,
+-                    null);
+-            for(ServiceReference<ProtocolProviderService> ref : references)
++            ServiceReference[] references = context.getServiceReferences(
++                    ProtocolProviderService.class.getName(),
++                    null
++                    );
++            for(ServiceReference reference : references)
+             {
+-                ProtocolProviderService service = context.getService(ref);
++                Object service = context.getService(reference);
+                 if(service instanceof ProtocolProviderServiceSipImpl)
+                     instances.add((ProtocolProviderServiceSipImpl) service);
+             }
