@@ -36,7 +36,7 @@
 Summary:	Multi-protocol audio/video and chat communicator written in Java
 Name:		%{name}
 Version:	2.10.%{subversion}
-Release:	0
+Release:	1
 License:	ASL 2.0
 Group:		Development/Java
 Url:		https://www.jitsi.org
