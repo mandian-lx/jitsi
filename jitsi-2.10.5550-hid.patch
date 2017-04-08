@@ -1,0 +1,10 @@
+--- jitsi/src/native/build.xml.hid
++++ jitsi/src/native/build.xml
+@@ -170,6 +170,7 @@
+       <linkerarg value="-m32" if="cross_32" unless="is.running.macos" />
+       <linkerarg value="-m64" if="cross_64" unless="is.running.macos" />
+       <linkerarg value="-lX11" location="end" if="is.running.linux" />
++      <linkerarg value="-lXtst" location="end" if="is.running.linux" />
+       <linkerarg value="-Wl,-z,relro" if="is.running.debian"/>
+ 
+       <fileset dir="${src}/native/hid" includes="net*.c KeyboardUtil_unix.c" if="is.running.linux" />
