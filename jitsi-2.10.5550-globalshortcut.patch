@@ -1,0 +1,10 @@
+--- jitsi/src/native/build.xml.globalshortcut
++++ jitsi/src/native/build.xml
+@@ -506,6 +507,7 @@
+         <linkerarg value="-m64" if="cross_64" unless="is.running.macos" />
+         <linkerarg value="-lX11" if="is.running.linux" />
+         <linkerarg value="-lstdc++" if="is.running.linux" />
++        <linkerarg value="-pthread" if="is.running.linux" />
+         <linkerarg value="-Wl,-z,relro" if="is.running.debian"/>
+     </cc>
+   </target>

@@ -47,9 +47,10 @@ Patch1:		%{name}-2.10.5550-remove_jingle.patch
 Patch2:		%{name}-2.10.5550-junit3.patch
 Patch3:		%{name}-2.10.5550-felix-osgi-core.patch
 Patch4:		%{name}-2.10.5550-galagonotification.patch
-Patch5:		%{name}-2.10.5550-hid.patch
-Patch6:		%{name}-2.10.5550-use_system_myspell_dict.patch
-Patch7:		%{name}-2.10.5550-use_system_jars.patch
+Patch5:		%{name}-2.10.5550-globalshortcut.patch
+Patch6:		%{name}-2.10.5550-hid.patch
+Patch7:		%{name}-2.10.5550-use_system_myspell_dict.patch
+Patch8:		%{name}-2.10.5550-use_system_jars.patch
 
 Patch100:	%{name}-2.10.5550-use_system_jar_accountinfo_bundle.patch
 Patch101:	%{name}-2.10.5550-use_system_jar_chatalerter_bundle.patch
@@ -345,9 +346,10 @@ find . -type f -name "*.tar.gz" -delete
 %if %{with galagonotification}
 %patch4  -p1 -b .galagonotification
 %endif
+%patch5  -p1 -b .globalshortcut
 %patch6  -p1 -b .hid
-%patch6  -p1 -b .dict
-%patch7  -p1 -b .system_jars
+%patch7  -p1 -b .dict
+%patch8  -p1 -b .system_jars
 
 %patch100  -p1 -b .accountinfo
 %patch101  -p1 -b .chatalerter
