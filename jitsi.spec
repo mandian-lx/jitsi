@@ -149,6 +149,7 @@ BuildRequires:	pkgconfig(dbus-1)
 BuildRequires:	pkgconfig(x11)
 #    hid
 BuildRequires:	pkgconfig(x11)
+BuildRequires:	pkgconfig(xtst)
 #    hwaddressretriever
 BuildRequires:	pkgconfig(x11)
 #    sysactivitynotifications
