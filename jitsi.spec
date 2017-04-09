@@ -159,6 +159,8 @@ BuildRequires:	pkgconfig(gtk+-x11-2.0)
 BuildRequires:	pkgconfig(x11)
 BuildRequires:	pkgconfig(xscrnsaver)
 
+Requires:	javapackages-local
+Requires:	java
 Requires:	osgi(bcpkix)
 Requires:	osgi(bcprov)
 Requires:	osgi(ch.imvs.sdes4j)
